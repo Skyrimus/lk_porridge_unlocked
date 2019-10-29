@@ -33,7 +33,6 @@
 #define bq24196_CON8      0x08
 #define bq24196_CON9      0x09
 #define bq24196_CON10      0x0A
-#define bq24196_REG_NUM 11
 
 /**********************************************************
   *
@@ -67,7 +66,7 @@
 #define CON1_BOOST_LIM_SHIFT  0
 
 //CON2
-#define CON2_ICHG_MASK    0x3F
+#define CON2_ICHG_MASK    0x1F
 #define CON2_ICHG_SHIFT   2
 
 //CON3
@@ -201,10 +200,8 @@ extern kal_uint32 bq24196_get_vbus_stat(void);
 extern kal_uint32 bq24196_get_chrg_stat(void);
 extern kal_uint32 bq24196_get_vsys_stat(void);
 //---------------------------------------------------------
-extern void bq24196_hw_init(void);
-extern void bq24196_charging_enable(kal_uint32 bEnable);
 extern void bq24196_dump_register(void);
-extern kal_uint32 bq24196_get_chrg_stat(void);
+extern kal_uint32 bq24196_config_interface_direct (kal_uint8 RegNum, kal_uint8 val);
 
 #endif // _bq24196_SW_H_
 

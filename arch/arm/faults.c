@@ -24,6 +24,20 @@
 #include <arch/arm.h>
 #include <kernel/thread.h>
 
+static inline uint32_t arch_read_dfsr(void)
+{
+	uint32_t reg;
+	__asm__ volatile("mrc p15, 0, %0, c5, c0, 0" : "=r" (reg));
+	return reg;
+}
+
+static inline uint32_t arch_read_dfar(void)
+{
+	uint32_t reg;
+	__asm__ volatile("mrc p15, 0, %0, c6, c0, 0" : "=r" (reg));
+	return reg;
+}
+
 static void dump_fault_frame(struct arm_fault_frame *frame)
 {
 	dprintf(CRITICAL, "r0  0x%08x r1  0x%08x r2  0x%08x r3  0x%08x\n", frame->r[0], frame->r[1], frame->r[2], frame->r[3]);
@@ -31,7 +45,7 @@ static void dump_fault_frame(struct arm_fault_frame *frame)
 	dprintf(CRITICAL, "r8  0x%08x r9  0x%08x r10 0x%08x r11 0x%08x\n", frame->r[8], frame->r[9], frame->r[10], frame->r[11]);
 	dprintf(CRITICAL, "r12 0x%08x usp 0x%08x ulr 0x%08x pc  0x%08x\n", frame->r[12], frame->usp, frame->ulr, frame->pc);
 	dprintf(CRITICAL, "spsr 0x%08x\n", frame->spsr);
-
+	dprintf(CRITICAL, "spsr 0x%08x dfsr 0x%08x dfar 0x%08x\n", frame->spsr, arch_read_dfsr(), arch_read_dfar());
 	struct arm_mode_regs regs;
 	arm_save_mode_regs(&regs);
 
@@ -44,14 +58,27 @@ static void dump_fault_frame(struct arm_fault_frame *frame)
 	// dump the bottom of the current stack
 	addr_t stack;
 	switch (frame->spsr & MODE_MASK) {
-		case MODE_FIQ: stack = regs.fiq_r13; break;
-		case MODE_IRQ: stack = regs.irq_r13; break;
-		case MODE_SVC: stack = regs.svc_r13; break;
-		case MODE_UND: stack = regs.und_r13; break;
-		case MODE_SYS: stack = regs.sys_r13; break;
+		case MODE_FIQ:
+			stack = regs.fiq_r13;
+			break;
+		case MODE_IRQ:
+			stack = regs.irq_r13;
+			break;
+		case MODE_SVC:
+			stack = regs.svc_r13;
+			break;
+		case MODE_UND:
+			stack = regs.und_r13;
+			break;
+		case MODE_SYS:
+			stack = regs.sys_r13;
+			break;
 		default:
 			stack = 0;
 	}
+	dprintf(CRITICAL, "Code: %04x %04x %04x %04x <%04x> %04x %04x %04x %04x\n",
+		*(uint16_t *)(frame->pc-8),*(uint16_t *)(frame->pc-6),*(uint16_t *)(frame->pc-4), *(uint16_t *)(frame->pc-2), *(uint16_t *)(frame->pc),
+		*(uint16_t *)(frame->pc+2), *(uint16_t *)(frame->pc+4), *(uint16_t *)(frame->pc+6), *(uint16_t *)(frame->pc+8));
 
 	if (stack != 0) {
 		dprintf(CRITICAL, "bottom of stack at 0x%08x:\n", (unsigned int)stack);

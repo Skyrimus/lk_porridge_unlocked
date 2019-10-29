@@ -50,18 +50,16 @@ void platform_mem_preserved_load_img(void);
 void platform_mem_preserved_dump_mem(void);
 void config_L2_size(void);
 
-typedef struct        /* RAM configuration */
-{
-    unsigned int start_hi;
-    unsigned int start_lo;
-    unsigned int size_hi;
-    unsigned int size_lo;
+typedef struct {      /* RAM configuration */
+	unsigned int start_hi;
+	unsigned int start_lo;
+	unsigned int size_hi;
+	unsigned int size_lo;
 } dt_dram_info;
 
-typedef struct
-{
-    unsigned int size_hi;
-    unsigned int size_lo;
+typedef struct {
+	unsigned int size_hi;
+	unsigned int size_lo;
 } dt_size_info;
 
 #endif

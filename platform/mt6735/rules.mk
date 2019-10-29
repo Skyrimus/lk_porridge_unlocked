@@ -6,7 +6,7 @@ CPU     := generic
 
 MMC_SLOT         := 1
 
-# choose one of following value -> 1: disabled/ 2: permissive /3: enforcing
+# choose one of following value ->  2: permissive /3: enforcing
 SELINUX_STATUS := 3
 
 # overwrite SELINUX_STATUS value with PRJ_SELINUX_STATUS, if defined. it's by project variable.
@@ -16,7 +16,10 @@ endif
 
 ifeq (yes,$(strip $(MTK_BUILD_ROOT)))
 SELINUX_STATUS := 2
+DEFINES += MTK_BUILD_ROOT
 endif
+
+DEFINES += PLATFORM=\"$(PLATFORM)\"
 
 DEFINES += SELINUX_STATUS=$(SELINUX_STATUS)
 
@@ -24,8 +27,17 @@ DEFINES += PERIPH_BLK_BLSP=1
 DEFINES += WITH_CPU_EARLY_INIT=0 WITH_CPU_WARM_BOOT=0 \
 	   MMC_SLOT=$(MMC_SLOT)
 
+CFG_DTB_EARLY_LOADER_SUPPORT := yes
+ifeq ($(CFG_DTB_EARLY_LOADER_SUPPORT), yes)
+	DEFINES += CFG_DTB_EARLY_LOADER_SUPPORT=1
+endif
+
 ifeq ($(MTK_SECURITY_SW_SUPPORT), yes)
 	DEFINES += MTK_SECURITY_SW_SUPPORT
+endif
+
+ifeq ($(MTK_EFUSE_DOWNGRADE), yes)
+	DEFINES += MTK_EFUSE_DOWNGRADE
 endif
 
 ifeq ($(MTK_SEC_FASTBOOT_UNLOCK_SUPPORT), yes)
@@ -33,6 +45,10 @@ ifeq ($(MTK_SEC_FASTBOOT_UNLOCK_SUPPORT), yes)
 ifeq ($(MTK_SEC_FASTBOOT_UNLOCK_KEY_SUPPORT), yes)
 	DEFINES += MTK_SEC_FASTBOOT_UNLOCK_KEY_SUPPORT
 endif
+endif
+
+ifeq ($(CFG_MEMORY_RESERVED_SMALL_GRANULARITY),yes)
+	DEFINES += CFG_MEMORY_RESERVED_SMALL_GRANULARITY=1
 endif
 
 ifeq ($(MTK_KERNEL_POWER_OFF_CHARGING),yes)
@@ -53,10 +69,45 @@ ifeq ($(MTK_EMMC_POWER_ON_WP),yes)
 endif
 endif
 
-$(info libshowlogo new path ------- $(LOCAL_DIR)/../../../../../bootable/bootloader/lk/lib/libshowlogo)
+ifdef MTK_CARRIEREXPRESS_PACK
+ifneq ($(strip $(MTK_CARRIEREXPRESS_PACK)), no)
+    DEFINES += MTK_CARRIEREXPRESS_PACK
+ifeq ($(filter OP01, $(subst _, $(space), $(MTK_REGIONAL_OP_PACK))), OP01)
+    DEFINES += MTK_CARRIEREXPRESS_PACK_OP01
+endif
+
+ifeq ($(filter OP02, $(subst _, $(space), $(MTK_REGIONAL_OP_PACK))), OP02)
+    DEFINES += MTK_CARRIEREXPRESS_PACK_OP02
+endif
+
+ifeq ($(filter OP09, $(subst _, $(space), $(MTK_REGIONAL_OP_PACK))), OP09)
+    DEFINES += MTK_CARRIEREXPRESS_PACK_OP09
+endif
+
+ifneq ($(filter NONE, $(subst _, $(space), $(OPTR_SPEC_SEG_DEF))), NONE)
+ifeq ($(filter OP01, $(subst _, $(space), $(OPTR_SPEC_SEG_DEF))), OP01)
+    GLOBAL_DEVICE_DEFAULT_OPTR := 1
+    DEFINES += GLOBAL_DEVICE_DEFAULT_OPTR=$(GLOBAL_DEVICE_DEFAULT_OPTR)
+endif
+
+ifeq ($(filter OP02, $(subst _, $(space), $(OPTR_SPEC_SEG_DEF))), OP02)
+    GLOBAL_DEVICE_DEFAULT_OPTR := 2
+    DEFINES += GLOBAL_DEVICE_DEFAULT_OPTR=$(GLOBAL_DEVICE_DEFAULT_OPTR)
+endif
+
+ifeq ($(filter OP09, $(subst _, $(space), $(OPTR_SPEC_SEG_DEF))), OP09)
+    GLOBAL_DEVICE_DEFAULT_OPTR := 9
+    DEFINES += GLOBAL_DEVICE_DEFAULT_OPTR=$(GLOBAL_DEVICE_DEFAULT_OPTR)
+endif
+endif
+
+endif
+endif
+
+$(info libshowlogo new path ------- $(LOCAL_DIR)/../../lib/libshowlogo)
 INCLUDES += -I$(LOCAL_DIR)/include \
             -I$(LOCAL_DIR)/include/platform \
-            -I$(LOCAL_DIR)/../../../../../bootable/bootloader/lk/lib/libshowlogo \
+            -I$(LOCAL_DIR)/../../lib/libshowlogo \
             -Icustom/$(FULL_PROJECT)/lk/include/target \
             -Icustom/$(FULL_PROJECT)/lk/lcm/inc \
             -Icustom/$(FULL_PROJECT)/lk/inc \
@@ -126,7 +177,12 @@ OBJS += \
 	$(LOCAL_DIR)/fpc_sw_repair2sw.o\
 	$(LOCAL_DIR)/mtk_auxadc.o\
 	$(LOCAL_DIR)/mt_dummy_read.o\
-	
+	$(LOCAL_DIR)/mt_efuse.o
+
+ifeq ($(MTK_SECURITY_SW_SUPPORT),yes)
+	OBJS += $(LOCAL_DIR)/sec_logo_auth.o
+	OBJS += $(LOCAL_DIR)/sec_dtbo_auth.o
+endif
 ifneq ($(MACH_FPGA_LED_SUPPORT), yes)
 	OBJS += $(LOCAL_DIR)/mt_leds.o
 endif
@@ -141,17 +197,24 @@ ifneq ($(MTK_EMMC_SUPPORT),yes)
 #	OBJS +=$(LOCAL_DIR)/bmt.o
 endif
 
+ifeq ($(MTK_USB2JTAG_SUPPORT),yes)
+OBJS += $(LOCAL_DIR)/mt_usb2jtag.o
+DEFINES += MTK_USB2JTAG_SUPPORT
+endif
 
 ifeq ($(MTK_MT8193_SUPPORT),yes)
 OBJS +=$(LOCAL_DIR)/mt8193_init.o
 OBJS +=$(LOCAL_DIR)/mt8193_ckgen.o
 OBJS +=$(LOCAL_DIR)/mt8193_i2c.o
-OBJS +=$(LOCAL_DIR)/ddp_dpi.o
 endif
 
 ifeq ($(MTK_KERNEL_POWER_OFF_CHARGING),yes)
 OBJS +=$(LOCAL_DIR)/mt_kernel_power_off_charging.o
 DEFINES += MTK_KERNEL_POWER_OFF_CHARGING
+endif
+
+ifeq ($(MTK_PUMP_EXPRESS_SUPPORT),yes)
+DEFINES += MTK_PUMP_EXPRESS_SUPPORT
 endif
 
 ifeq ($(MTK_BQ24261_SUPPORT),yes)
@@ -162,10 +225,6 @@ else
     else
         ifeq ($(MTK_NCP1854_SUPPORT),yes)
             OBJS +=$(LOCAL_DIR)/ncp1854.o
-       else
-            ifeq ($(MTK_BQ24196_SUPPORT),yes)
-                OBJS +=$(LOCAL_DIR)/bq24196.o	
-            endif
         endif
     endif
 endif
@@ -181,7 +240,10 @@ endif
 
 ifeq ($(MTK_EFUSE_WRITER_SUPPORT), yes)
     DEFINES += MTK_EFUSE_WRITER_SUPPORT
-	OBJS += $(LOCAL_DIR)/mt_efuse.o
+endif
+
+ifeq ($(MTK_GOOGLE_TRUSTY_SUPPORT),yes)
+DEFINES += MTK_GOOGLE_TRUSTY_SUPPORT
 endif
 
 ifeq ($(CUSTOM_SEC_AUTH_SUPPORT), yes)
@@ -192,3 +254,5 @@ endif
 LIBSEC_PLAT := -lsplat -ldevinfo
 
 LINKER_SCRIPT += $(BUILDDIR)/system-onesegment.ld
+
+include platform/common/rules.mk

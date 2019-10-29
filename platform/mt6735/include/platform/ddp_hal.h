@@ -52,8 +52,8 @@ typedef enum
 typedef enum {
     SOF_SINGLE = 0,
     SOF_DSI0,
-    SOF_DPI0,
     SOF_DSI1,
+    SOF_DPI0,
 } MUTEX_SOF;  
 
 enum OVL_LAYER_SOURCE {

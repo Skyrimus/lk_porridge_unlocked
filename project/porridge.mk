@@ -1,29 +1,23 @@
 LOCAL_DIR := $(GET_LOCAL_DIR)
-
 TARGET := porridge
-
 MODULES += app/mt_boot \
            dev/lcm
-
-
 MTK_EMMC_SUPPORT = yes
 DEFINES += MTK_NEW_COMBO_EMMC_SUPPORT
 MTK_KERNEL_POWER_OFF_CHARGING = yes
 MTK_LCM_PHYSICAL_ROTATION = 180
 CUSTOM_LK_LCM="aeon_ili9881c_hd720_dsi_vdo_lide_8536 aeon_ili9881c_hd720_dsi_vdo_lide_8536_D aeon_ili9881c_hd720_dsi_vdo_hlt_8536_25t aeon_ili9881c_hd720_dsi_vdo_txd_8536 aeon_rm68200_hd720_dsi_vdo_lide_8536 aeon_hx8394f_hd720_dsi_vdo_lide_8536 aeon_hx8394f_hd720_dsi_vdo_hlt_8536 otm1287a_hd720_dsi_vdo_e520_v511_lide"
 #hx8392a_dsi_cmd = yes
-
 #FASTBOOT_USE_G_ORIGINAL_PROTOCOL = yes
 MTK_SECURITY_SW_SUPPORT = no
 MTK_VERIFIED_BOOT_SUPPORT = no
 MTK_SEC_FASTBOOT_UNLOCK_SUPPORT = no
-
 DEBUG := 0
 BOOT_LOGO = cu_lte_hd720
-
 #DEFINES += WITH_DEBUG_DCC=1
 DEFINES += WITH_DEBUG_UART=1
 #DEFINES += WITH_DEBUG_FBCON=1
 #DEFINES += MACH_FPGA=y
 #DEFINES += SB_LK_BRINGUP=y
 DEFINES += MTK_GPT_SCHEME_SUPPORT
+MTK_GOOGLE_TRUSTY_SUPPORT=no

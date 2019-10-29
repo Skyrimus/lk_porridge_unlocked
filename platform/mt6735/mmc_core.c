@@ -2914,7 +2914,7 @@ exit:
 
 int mmc_init_mem_card(struct mmc_host *host, struct mmc_card *card, u32 ocr)
 {
-    int err, id = host->id;
+    int err = MMC_ERR_NONE, id = host->id;
 #if defined(FEATURE_MMC_UHS1)
     int s18a = 0;
 #endif
@@ -2942,8 +2942,13 @@ int mmc_init_mem_card(struct mmc_host *host, struct mmc_card *card, u32 ocr)
     mmc_go_idle(host);
 
     /* send interface condition */
-    if (mmc_card_sd(card))
-        err = mmc_send_if_cond(host, ocr);
+	if (mmc_card_sd(card)) {
+		err = mmc_send_if_cond(host, ocr);
+		if (err != MMC_ERR_NONE) {
+			printf("msdc, send if cond error.\n");
+			goto out;
+		}
+	}
 
     /* host support HCS[30] */
     ocr |= (1 << 30);

@@ -9,3 +9,4 @@ OBJS += \
 	$(LOCAL_DIR)/fdt_strerror.o \
 	$(LOCAL_DIR)/fdt_sw.o \
 	$(LOCAL_DIR)/fdt_wip.o \
+	$(LOCAL_DIR)/fdt_overlay.o

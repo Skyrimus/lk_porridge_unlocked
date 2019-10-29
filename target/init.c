@@ -24,6 +24,9 @@
 #include <debug.h>
 #include <target.h>
 #include <compiler.h>
+#if defined(MTK_UFS_BOOTING)
+#include "ufs_aio_interface.h"
+#endif
 
 #define EXPAND(NAME) #NAME
 #define TARGET(NAME) EXPAND(NAME)
@@ -64,13 +67,15 @@ __WEAK unsigned long long target_get_max_flash_size(void)
 {
 #ifdef MTK_EMMC_SUPPORT
 		return g_emmc_size;
+#elif defined(MTK_UFS_BOOTING)
+        return ufs_lk_get_device_size();
 #else
 		return (unsigned long long)g_nand_size;
-#endif	
+#endif
 }
 __WEAK int target_is_emmc_boot(void)
 {
-#ifdef MTK_EMMC_SUPPORT
+#if defined(MTK_EMMC_SUPPORT) || defined(MTK_UFS_BOOTING)
 	return 1;
 #else
 	return 0;

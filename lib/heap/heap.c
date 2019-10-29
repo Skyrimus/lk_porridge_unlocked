@@ -28,6 +28,9 @@
 #include <string.h>
 #include <kernel/thread.h>
 #include <lib/heap.h>
+#include <platform/ram_console.h>
+#include <dev/mrdump.h>
+#include <arch/arm/mmu.h>
 
 #define LOCAL_TRACE 0
 
@@ -126,7 +129,7 @@ static void heap_test(void)
 
 	for (i=0; i < 32768; i++) {
 		unsigned int index = (unsigned int)rand() % 16;
-		
+
 		if ((i % (16*1024)) == 0)
 			printf("pass %d\n", i);
 
@@ -186,11 +189,11 @@ try_merge:
 		if ((vaddr_t)last_chunk + last_chunk->len == (vaddr_t)chunk) {
 			// easy, just extend the previous chunk
 			last_chunk->len += chunk->len;
-			
+
 			// remove ourself from the list
 			list_delete(&chunk->node);
-			
-			// set the chunk pointer to the newly extended chunk, in case 
+
+			// set the chunk pointer to the newly extended chunk, in case
 			// it needs to merge with the next chunk below
 			chunk = last_chunk;
 		}
@@ -230,7 +233,7 @@ void *heap_alloc(size_t size, unsigned int alignment)
 #if DEBUG_HEAP
 	size_t original_size = size;
 #endif
-	
+
 	LTRACEF("size %zd, align %d\n", size, alignment);
 
 	// alignment must be power of 2
@@ -340,9 +343,9 @@ void *heap_realloc(void *ptr, size_t size)
 	struct alloc_struct_begin *as = (struct alloc_struct_begin *)ptr;
 	as--;
 
-	if (size != 0){
+	if (size != 0) {
 		tmp_ptr = heap_alloc(size, 0);
-		if (ptr != NULL && tmp_ptr != NULL){
+		if (ptr != NULL && tmp_ptr != NULL) {
 			min_size = (size < as->size) ? size : as->size;
 			memcpy(tmp_ptr, ptr, min_size);
 			heap_free(ptr);
@@ -351,7 +354,7 @@ void *heap_realloc(void *ptr, size_t size)
 		if (ptr != NULL)
 			heap_free(ptr);
 	}
-	return(tmp_ptr);
+	return (tmp_ptr);
 }
 
 
@@ -365,7 +368,7 @@ void heap_free(void *ptr)
 	// check for the old allocation structure
 	struct alloc_struct_begin *as = (struct alloc_struct_begin *)ptr;
 	as--;
-	
+
 	DEBUG_ASSERT(as->magic == HEAP_MAGIC);
 
 #if DEBUG_HEAP
@@ -396,18 +399,21 @@ void heap_free(void *ptr)
 void heap_init(void)
 {
 	LTRACE_ENTRY;
-
 	// set the heap range
 	theheap.base = (void *)HEAP_START;
 	theheap.len = HEAP_LEN;
 
-	dprintf(INFO, "base %p size %zd bytes\n", theheap.base, theheap.len);
+	dprintf(INFO, "heap base %p size %zd bytes\n", theheap.base, theheap.len);
 
 	// initialize the free list
 	list_initialize(&theheap.free_list);
 
 	// create an initial free chunk
 	heap_insert_free_chunk(heap_create_free_chunk(theheap.base, theheap.len));
+#ifdef MTK_3LEVEL_PAGETABLE
+	extern ld_tt_l2_info_t ld_tt_l2_info;
+	ld_tt_l2_info.heap_init_done = 1;
+#endif
 
 	// dump heap info
 //	heap_dump();

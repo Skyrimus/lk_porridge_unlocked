@@ -40,7 +40,7 @@
 #if !defined(MMC_MSDC_DRV_CTP) // CTP no need this file
 #include "addr_trans.h"
 #include "msdc.h"
-
+#include "block_generic_interface.h"
 #define MMC_HOST_ID                 0
 
 #define BUF_BLK_NUM                 4   /* 4 * 512bytes = 2KB */
@@ -58,6 +58,7 @@
 **************************************************************************/
 static addr_trans_info_t g_emmc_addr_trans[EMMC_PART_END];
 static addr_trans_tbl_t g_addr_trans_tbl;
+int mmc_do_erase(int dev_num,u64 start_addr,u64 len,u32 part_id);
 
 #if defined(MMC_MSDC_DRV_PRELOADER)
 extern struct nand_chip g_nand_chip;
@@ -314,7 +315,7 @@ u32 mmc_get_device_id(u8 *id, u32 len,u32 *fw_len)
 
 
 #if defined(MMC_MSDC_DRV_LK)
-#include <platform/partition.h>
+#include "part_dev.h"
 static block_dev_desc_t sd_dev[MSDC_MAX_NUM];
 static int boot_dev_found = 0;
 static part_dev_t boot_dev;
@@ -353,6 +354,10 @@ int mmc_legacy_init(int verbose)
         bdev->dev         = id;
         bdev->blksz       = MMC_BLOCK_SIZE;
         bdev->lba         = card->nblks * card->blklen / MMC_BLOCK_SIZE;
+		bdev->blk_bits    = 9;
+		bdev->part_boot1  = EMMC_PART_BOOT1;
+		bdev->part_boot2  = EMMC_PART_BOOT2;
+		bdev->part_user   = EMMC_PART_USER;
         bdev->block_read  = mmc_wrap_bread;
         bdev->block_write = mmc_wrap_bwrite;
 
@@ -370,6 +375,7 @@ int mmc_legacy_init(int verbose)
             boot_dev.id = id;
             boot_dev.init = 1;
             boot_dev.blkdev = bdev;
+			boot_dev.erase = mmc_do_erase;
             mt_part_register_device(&boot_dev);
             boot_dev_found = 1;
             printf("[SD%d] boot device found\n", id);

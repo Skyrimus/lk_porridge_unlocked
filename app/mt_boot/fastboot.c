@@ -1,3 +1,34 @@
+/* Copyright Statement:
+*
+* This software/firmware and related documentation ("MediaTek Software") are
+* protected under relevant copyright laws. The information contained herein
+* is confidential and proprietary to MediaTek Inc. and/or its licensors.
+* Without the prior written permission of MediaTek inc. and/or its licensors,
+* any reproduction, modification, use or disclosure of MediaTek Software,
+* and information contained herein, in whole or in part, shall be strictly prohibited.
+*/
+/* MediaTek Inc. (C) 2015. All rights reserved.
+*
+* BY OPENING THIS FILE, RECEIVER HEREBY UNEQUIVOCALLY ACKNOWLEDGES AND AGREES
+* THAT THE SOFTWARE/FIRMWARE AND ITS DOCUMENTATIONS ("MEDIATEK SOFTWARE")
+* RECEIVED FROM MEDIATEK AND/OR ITS REPRESENTATIVES ARE PROVIDED TO RECEIVER ON
+* AN "AS-IS" BASIS ONLY. MEDIATEK EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES,
+* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT.
+* NEITHER DOES MEDIATEK PROVIDE ANY WARRANTY WHATSOEVER WITH RESPECT TO THE
+* SOFTWARE OF ANY THIRD PARTY WHICH MAY BE USED BY, INCORPORATED IN, OR
+* SUPPLIED WITH THE MEDIATEK SOFTWARE, AND RECEIVER AGREES TO LOOK ONLY TO SUCH
+* THIRD PARTY FOR ANY WARRANTY CLAIM RELATING THERETO. RECEIVER EXPRESSLY ACKNOWLEDGES
+* THAT IT IS RECEIVER'S SOLE RESPONSIBILITY TO OBTAIN FROM ANY THIRD PARTY ALL PROPER LICENSES
+* CONTAINED IN MEDIATEK SOFTWARE. MEDIATEK SHALL ALSO NOT BE RESPONSIBLE FOR ANY MEDIATEK
+* SOFTWARE RELEASES MADE TO RECEIVER'S SPECIFICATION OR TO CONFORM TO A PARTICULAR
+* STANDARD OR OPEN FORUM. RECEIVER'S SOLE AND EXCLUSIVE REMEDY AND MEDIATEK'S ENTIRE AND
+* CUMULATIVE LIABILITY WITH RESPECT TO THE MEDIATEK SOFTWARE RELEASED HEREUNDER WILL BE,
+* AT MEDIATEK'S OPTION, TO REVISE OR REPLACE THE MEDIATEK SOFTWARE AT ISSUE,
+* OR REFUND ANY SOFTWARE LICENSE FEES OR SERVICE CHARGE PAID BY RECEIVER TO
+* MEDIATEK FOR SUCH MEDIATEK SOFTWARE AT ISSUE.
+*/
+
 #include <debug.h>
 #include <string.h>
 #include <stdlib.h>
@@ -24,7 +55,10 @@
 #if defined(MTK_SECURITY_SW_SUPPORT) && defined(MTK_SEC_FASTBOOT_UNLOCK_SUPPORT)
 #include "sec_unlock.h"
 #endif
-
+#include <platform/boot_mode.h>
+#ifdef FASTBOOT_WHOLE_FLASH_SUPPORT
+#include "partition_parser.h"
+#endif
 #define MAX_RSP_SIZE 64
 /* MAX_USBFS_BULK_SIZE: if use USB3 QMU GPD mode: cannot exceed 63 * 1024 */
 #define MAX_USBFS_BULK_SIZE (16 * 1024)
@@ -34,7 +68,7 @@
 
 static event_t usb_online;
 static event_t txn_done;
-static unsigned char buffer[4096] __attribute__((aligned(32)));
+static unsigned char buffer[4096] __attribute__((aligned(64)));
 static struct udc_endpoint *in, *out;
 static struct udc_request *req;
 int txn_status;
@@ -55,6 +89,8 @@ extern void fastboot_oem_query_lock_state(const char *arg, void *data, unsigned 
 timer_t wdt_timer;
 struct fastboot_cmd *cmdlist;
 
+extern BOOT_ARGUMENT *g_boot_arg;
+
 static void req_complete(struct udc_request *req, unsigned actual, int status)
 {
 	txn_status = status;
@@ -63,16 +99,17 @@ static void req_complete(struct udc_request *req, unsigned actual, int status)
 }
 
 
-void fastboot_register(const char *prefix,
-		       void (*handle)(const char *arg, void *data, unsigned sz), unsigned char security_enabled)
+void fastboot_register(const char *prefix, void (*handle)(const char *arg, void *data, unsigned sz),
+                       unsigned allowed_when_security_on, unsigned forbidden_when_lock_on)
 {
-	struct fastboot_cmd *cmd;      
-    
+	struct fastboot_cmd *cmd;
+
 	cmd = malloc(sizeof(*cmd));
 	if (cmd) {
 		cmd->prefix = prefix;
 		cmd->prefix_len = strlen(prefix);
-        cmd->sec_support = security_enabled;
+		cmd->allowed_when_security_on = allowed_when_security_on;
+		cmd->forbidden_when_lock_on = forbidden_when_lock_on;
 		cmd->handle = handle;
 		cmd->next = cmdlist;
 		cmdlist = cmd;
@@ -95,16 +132,16 @@ void fastboot_publish(const char *name, const char *value)
 
 void fastboot_update_var(const char *name, const char *value)
 {
-    struct fastboot_var *var = varlist;
+	struct fastboot_var *var = varlist;
 
-    while (NULL != var) {
-	if (!strcmp(name, var->name)) {
-	    var->value = value;
+	while (NULL != var) {
+		if (!strcmp(name, var->name)) {
+			var->value = value;
+		}
+		var = var->next;
 	}
-	var = var->next;
-    }
 
-    return;
+	return;
 }
 
 int usb_read(void *_buf, unsigned len)
@@ -225,8 +262,7 @@ static void fastboot_command_loop(void)
 	dprintf(ALWAYS,"fastboot: processing commands\n");
 
 again:
-	while (fastboot_state != STATE_ERROR)
-	{
+	while (fastboot_state != STATE_ERROR) {
 		memset(buffer, 0, sizeof(buffer));
 		r = usb_read(buffer, MAX_RSP_SIZE);
 		if (r < 0) break; //no input command
@@ -235,37 +271,34 @@ again:
 		dprintf(ALWAYS,"[fastboot]-[download_base:0x%x]-[download_size:0x%x]\n",(unsigned int)download_base,(unsigned int)download_size);
 
 		/*Pick up matched command and handle it*/
-		for (cmd = cmdlist; cmd; cmd = cmd->next)
-		{
+		for (cmd = cmdlist; cmd; cmd = cmd->next) {
 			fastboot_state = STATE_COMMAND;
-			if (memcmp(buffer, cmd->prefix, cmd->prefix_len))
-			{
+			if (memcmp(buffer, cmd->prefix, cmd->prefix_len)) {
 				continue;
 			}
 
 			dprintf(ALWAYS,"[Cmd process]-[buf:%s]-[lenBuf:%s]\n", buffer,  buffer + cmd->prefix_len);
-
-        #ifdef MTK_SECURITY_SW_SUPPORT            
-            if( !sec_usbdl_enabled() || cmd->sec_support ) 
-        #endif 
-            {      
-                cmd->handle((const char*) buffer + cmd->prefix_len,
-                    (void*) download_base, download_size);
-            }
-
-
-			if (fastboot_state == STATE_COMMAND)
-			{
-            #ifdef MTK_SECURITY_SW_SUPPORT            			   
-			    if( sec_usbdl_enabled() && !cmd->sec_support )
-                {         
-                    fastboot_fail("not support on security");
-                }
-                else
-            #endif
-                {
-				    fastboot_fail("unknown reason");
-                }
+#ifdef MTK_SECURITY_SW_SUPPORT
+			extern unsigned int seclib_sec_boot_enabled(unsigned int);
+			//if security boot enable, check cmd allowed
+			if ( !(sec_usbdl_enabled() || seclib_sec_boot_enabled(1)) || cmd->allowed_when_security_on )
+				if ((!cmd->forbidden_when_lock_on) || (0 != get_unlocked_status()))
+#endif
+				{
+					cmd->handle((const char*) buffer + cmd->prefix_len, (void*) download_base, download_size);
+				}
+			if (fastboot_state == STATE_COMMAND) {
+#ifdef MTK_SECURITY_SW_SUPPORT
+				if ((sec_usbdl_enabled() || seclib_sec_boot_enabled(1)) && !cmd->allowed_when_security_on ) {
+					fastboot_fail("not support on security");
+				} else
+				if ((cmd->forbidden_when_lock_on) && (0 == get_unlocked_status())) {
+					fastboot_fail("not allowed in locked state");
+				} else
+#endif
+				{
+					fastboot_fail("unknown reason");
+				}
 			}
 			goto again;
 		}
@@ -298,17 +331,17 @@ static void fastboot_notify(struct udc_gadget *gadget, unsigned event)
 static struct udc_endpoint *fastboot_endpoints[2];
 
 static struct udc_gadget fastboot_gadget = {
-	.notify		= fastboot_notify,
-	.ifc_class	= 0xff,
-	.ifc_subclass	= 0x42,
-	.ifc_protocol	= 0x03,
-	.ifc_endpoints	= 2,
-	.ifc_string	= "fastboot",
-	.ept		= fastboot_endpoints,
+	.notify     = fastboot_notify,
+	.ifc_class  = 0xff,
+	.ifc_subclass   = 0x42,
+	.ifc_protocol   = 0x03,
+	.ifc_endpoints  = 2,
+	.ifc_string = "fastboot",
+	.ept        = fastboot_endpoints,
 };
 
 extern void fastboot_oem_register();
-static void register_parition_var(void)
+void register_partition_var(void)
 {
 	int i;
 	unsigned long long p_size;
@@ -317,9 +350,9 @@ static void register_parition_var(void)
 	char *var_name_buf;
 	char *p_name_buf;
 
-	for(i=0;i<PART_MAX_COUNT;i++){
+	for (i=0; i<PART_MAX_COUNT; i++) {
 		p_size = partition_get_size(i);
-		if((long long)p_size == -1)
+		if ((long long)p_size == -1)
 			continue;
 		partition_get_name(i,&p_name_buf);
 
@@ -330,11 +363,11 @@ static void register_parition_var(void)
 		//printf("%d %s %s\n",i,var_name_buf,type_buf);
 
 		/*reserved for MTK security*/
-		if(!strcmp(type_buf,"ext4")){
-			if(!strcmp(p_name_buf,"userdata")){
+		if (!strcmp(type_buf,"ext4")) {
+			if (!strcmp(p_name_buf,"userdata")) {
 				p_size -= (u64)1*1024*1024;
 				if (p_size > 800*1024*1024) {
-				    p_size = 800*1024*1024;
+					p_size = 800*1024*1024;
 				}
 			}
 		}
@@ -344,7 +377,7 @@ static void register_parition_var(void)
 		sprintf(var_name_buf,"partition-size:%s",p_name_buf);
 		fastboot_publish(var_name_buf,value_buf);
 		//printf("%d %s %s\n",i,var_name_buf,value_buf);
-    }
+	}
 }
 
 static void register_secure_unlocked_var(void)
@@ -359,32 +392,32 @@ static void register_secure_unlocked_var(void)
 	/* [FIXME] memory allocated not freed? */
 
 	secure_buf = malloc(10);
-	#ifdef MTK_SECURITY_SW_SUPPORT
-        n = get_secure_status();
-	#else
+#ifdef MTK_SECURITY_SW_SUPPORT
+	n = get_secure_status();
+#else
 	n = 0;
-	#endif
+#endif
 	sprintf(secure_buf,"%s",str_buf[n]);
 	fastboot_publish("secure", secure_buf);
 
 	unlocked_buf = malloc(10);
-	#ifdef MTK_SECURITY_SW_SUPPORT
+#ifdef MTK_SECURITY_SW_SUPPORT
 	n = get_unlocked_status();
-	#else
+#else
 	n = 1;
-	#endif
+#endif
 	sprintf(unlocked_buf,"%s",str_buf[n]);
 	fastboot_publish("unlocked", unlocked_buf);
 
 	warranty_buf = malloc(10);
-	#ifdef MTK_SECURITY_SW_SUPPORT
-        sec_query_warranty(&warranty);
-	#else
+#ifdef MTK_SECURITY_SW_SUPPORT
+	sec_query_warranty(&warranty);
+#else
 	warranty = 0;
-	#endif
+#endif
 	if (warranty >= 0 && warranty <= 1) {
-	    sprintf(warranty_buf,"%s",str_buf[warranty]);
-	    fastboot_publish("warranty", warranty_buf);
+		sprintf(warranty_buf,"%s",str_buf[warranty]);
+		fastboot_publish("warranty", warranty_buf);
 	}
 
 }
@@ -398,8 +431,12 @@ static void register_off_mode_charge_var(void)
 
 	value_buf = malloc(5);
 	n = get_off_mode_charge_status();
-	sprintf(value_buf,"%s",str_buf[n]);
-	fastboot_publish("off-mode-charge", value_buf);
+	if ((n == 0) || (n == 1)) {
+		sprintf(value_buf,"%s",str_buf[n]);
+		fastboot_publish("off-mode-charge", value_buf);
+	} else {
+		dprintf(INFO, "off mode charge status 'n' is out off boundary\n");
+	}
 }
 #endif
 int fastboot_init(void *base, unsigned size)
@@ -409,45 +446,40 @@ int fastboot_init(void *base, unsigned size)
 	dprintf(ALWAYS, "fastboot_init()\n");
 
 	download_base = base;
-	download_max = size;
+	download_max = SCRATCH_SIZE;
 
 	//mtk_wdt_disable(); /*It will re-enable during continue boot*/
 	timer_initialize(&wdt_timer);
 	timer_set_periodic(&wdt_timer, 5000, (timer_callback)mtk_wdt_restart, NULL);
 
-	fastboot_register("getvar:", cmd_getvar, TRUE);
-	fastboot_publish("versiya", "Special For Wileyfox Spark 4PDA");
+	fastboot_register("getvar:", cmd_getvar, TRUE, FALSE);
+	fastboot_publish("version-preloader", g_boot_arg->pl_version);
+	fastboot_publish("version", "v2.0");
+	fastboot_publish("version", "Special For Wileyfox Spark 4PDA");
 	fastboot_publish("version", "By Skyrimus");
-#ifndef USER_BUILD
-	fastboot_register("boot", cmd_boot, FALSE);
-#endif
-	fastboot_register("signature", cmd_install_sig, FALSE);
+	fastboot_register("signature", cmd_install_sig, FALSE, TRUE);
 #ifdef USE_G_ORIGINAL_PROTOCOL
-
-	fastboot_register("flash:", cmd_flash_mmc, TRUE);
-	#ifndef USER_BUILD
-	fastboot_register("erase:", cmd_erase_mmc, TRUE);
-	#endif
+#if (defined(MTK_EMMC_SUPPORT) || defined(MTK_UFS_BOOTING)) && defined(MTK_SPI_NOR_SUPPORT)
+	dprintf(ALWAYS,"Init EMMC device in fastboot mode\n");
+	mmc_legacy_init(1);
+#endif
+	fastboot_register("flash:", cmd_flash_mmc, TRUE, TRUE);
+	fastboot_register("erase:", cmd_erase_mmc, TRUE, TRUE);
 #else
-#ifdef MTK_EMMC_SUPPORT
-	fastboot_register("flash:", cmd_flash_emmc, TRUE);
-	#ifndef USER_BUILD
-	fastboot_register("erase:", cmd_erase_emmc, TRUE);
-	#endif
+#if (defined(MTK_UFS_BOOTING) || defined(MTK_EMMC_SUPPORT))
+	fastboot_register("flash:", cmd_flash_emmc, TRUE, TRUE);
+	fastboot_register("erase:", cmd_erase_emmc, TRUE, TRUE);
 #else
-	fastboot_register("flash:", cmd_flash_nand, TRUE);
-	#ifndef USER_BUILD
-	fastboot_register("erase:", cmd_erase_nand, TRUE);
-	#endif
+	fastboot_register("flash:", cmd_flash_nand, TRUE, TRUE);
+	fastboot_register("erase:", cmd_erase_nand, TRUE, TRUE);
 #endif
 
 #endif
 
 
-	fastboot_register("continue", cmd_continue, FALSE);
-	fastboot_register("reboot", cmd_reboot, FALSE);
-	fastboot_register("reboot-bootloader", cmd_reboot_bootloader, FALSE);
-	fastboot_publish("platform", "MT6735");
+	fastboot_register("continue", cmd_continue, FALSE, FALSE);
+	fastboot_register("reboot", cmd_reboot, TRUE, FALSE);
+	fastboot_register("reboot-bootloader", cmd_reboot_bootloader, TRUE, FALSE);
 	fastboot_publish("product", TARGET(BOARD));
 	fastboot_publish("kernel", "lk");
 	register_secure_unlocked_var();
@@ -456,33 +488,47 @@ int fastboot_init(void *base, unsigned size)
 #endif
 	//fastboot_publish("serialno", sn_buf);
 
-	register_parition_var();
+	register_partition_var();
 
 
 	/*LXO: Download related command*/
-	fastboot_register("download:", cmd_download, TRUE);
+	fastboot_register("download:", cmd_download, TRUE, FALSE);
 	fastboot_publish("max-download-size", "0x8000000"); //128M = 134217728
 	/*LXO: END!Download related command*/
 
 	fastboot_oem_register();
-
-    fastboot_register("oem p2u", cmd_oem_p2u, FALSE);
-    fastboot_register("oem reboot-recovery",cmd_oem_reboot2recovery, FALSE);
-    fastboot_register("oem append-cmdline",cmd_oem_append_cmdline,FALSE);
-#ifdef MTK_OFF_MODE_CHARGE_SUPPORT
-	fastboot_register("oem off-mode-charge",cmd_oem_off_mode_charge,FALSE);
+#if defined(MTK_SECURITY_SW_SUPPORT)
+	fastboot_register("oem p2u", cmd_oem_p2u, TRUE, FALSE);
 #endif
-    #ifdef MTK_TC7_COMMON_DEVICE_INTERFACE
-    fastboot_register("oem auto-ADB",cmd_oem_ADB_Auto_Enable,FALSE);
-    #endif
+	fastboot_register("oem reboot-recovery",cmd_oem_reboot2recovery, TRUE, FALSE);
+	fastboot_register("oem append-cmdline",cmd_oem_append_cmdline,FALSE, FALSE);
+#ifdef MTK_OFF_MODE_CHARGE_SUPPORT
+	fastboot_register("oem off-mode-charge",cmd_oem_off_mode_charge,FALSE, FALSE);
+#endif
+#if defined(MTK_TC7_COMMON_DEVICE_INTERFACE) && defined(MTK_SECURITY_SW_SUPPORT)
+	fastboot_register("oem auto-ADB",cmd_oem_ADB_Auto_Enable,TRUE, FALSE);
+#endif
 #if defined(MTK_SECURITY_SW_SUPPORT) && defined(MTK_SEC_FASTBOOT_UNLOCK_SUPPORT)
-    fastboot_register("oem unlock",fastboot_oem_unlock, TRUE);
-    fastboot_register("oem lock",fastboot_oem_lock, TRUE);
-    fastboot_register("oem key",fastboot_oem_key,TRUE);
-    fastboot_register("oem lks",fastboot_oem_query_lock_state,TRUE);
+	fastboot_register("oem unlock",fastboot_oem_unlock, TRUE, FALSE);
+	fastboot_register("oem lock",fastboot_oem_lock, TRUE, FALSE);
+	fastboot_register("oem key",fastboot_oem_key,TRUE, FALSE);
+	fastboot_register("oem lks",fastboot_oem_query_lock_state,TRUE, FALSE);
+	/* allowed when secure boot and unlocked */
+	fastboot_register("boot", cmd_boot, TRUE, TRUE);
+	/* command rename */
+	fastboot_register("flashing unlock",fastboot_oem_unlock, TRUE, FALSE);
+	fastboot_register("flashing lock",fastboot_oem_lock, TRUE, FALSE);
+	fastboot_register("flashing get_unlock_ability", fastboot_get_unlock_ability, TRUE, FALSE);
 #endif
 #ifdef MTK_JTAG_SWITCH_SUPPORT
-    fastboot_register("oem ap_jtag",cmd_oem_ap_jtag, TRUE);
+	/* pin mux switch to ap_jtag */
+	fastboot_register("oem ap_jtag",cmd_oem_ap_jtag, TRUE, FALSE);
+#endif
+#ifdef MTK_TINYSYS_SCP_SUPPORT
+	fastboot_register("oem scp_status",cmd_oem_scp_status, FALSE, FALSE);
+#endif
+#ifdef MTK_USB2JTAG_SUPPORT
+	fastboot_register("oem usb2jtag", cmd_oem_usb2jtag, TRUE, FALSE);
 #endif
 	event_init(&usb_online, 0, EVENT_FLAG_AUTOUNSIGNAL);
 	event_init(&txn_done, 0, EVENT_FLAG_AUTOUNSIGNAL);
@@ -504,9 +550,8 @@ int fastboot_init(void *base, unsigned size)
 	if (udc_register_gadget(&fastboot_gadget))
 		goto fail_udc_register;
 
-	thr = thread_create("fastboot", fastboot_handler, 0, DEFAULT_PRIORITY, 4096);
-	if (!thr)
-	{
+	thr = thread_create("fastboot", fastboot_handler, 0, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
+	if (!thr) {
 		goto fail_alloc_in;
 	}
 	thread_resume(thr);

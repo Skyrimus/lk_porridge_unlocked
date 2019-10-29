@@ -1,23 +1,17 @@
 LOCAL_DIR := $(GET_LOCAL_DIR)
 
-MT_BOOT_OBJ_DIR := $(LK_TOP_DIR)/build-$(PROJECT)/app/mt_boot
+MT_BOOT_OBJ_DIR := $(BOOTLOADER_OUT)/build-$(PROJECT)/app/mt_boot
 
 ifeq ($(CUSTOM_SEC_AUTH_SUPPORT), yes)
 	OBJS += \
 		$(TO_ROOT)../../../mediatek/custom/common/security/fastboot/cust_auth.o
-endif	
+endif
 
 OBJS += \
 	$(LOCAL_DIR)/mt_boot.o \
 	$(LOCAL_DIR)/decompressor.o\
 	$(LOCAL_DIR)/fastboot.o \
 	$(LOCAL_DIR)/sys_commands.o\
-
-ifeq ($(MTK_LEGACY_SEC_WRAPPER), yes)
-OBJS += $(LOCAL_DIR)/sec_wrapper_legacy.o
-else
-OBJS += $(LOCAL_DIR)/sec_wrapper.o
-endif
 
 build_mt_ramdump := no
 ifneq ($(TARGET_BUILD_VARIANT),user)
@@ -30,7 +24,6 @@ ifeq ($(build_mt_ramdump),yes)
 OBJS += \
 	$(LOCAL_DIR)/aee/aee.o \
 	$(LOCAL_DIR)/aee/kdump_elf.o \
-	$(LOCAL_DIR)/aee/kdump_card_dump.o \
 	$(LOCAL_DIR)/aee/kdump_sd.o \
 	$(LOCAL_DIR)/aee/kdump_ext4.o \
 	$(LOCAL_DIR)/aee/kdump_null.o \
@@ -44,7 +37,8 @@ OBJS += \
 endif
 
 ifeq ($(KEDUMP_MINI), yes)
-OBJS += $(LOCAL_DIR)/aee/KEDump.o
+OBJS += $(LOCAL_DIR)/aee/KEDump.o \
+	$(LOCAL_DIR)/aee/platform_debug.o
 endif
 
 OBJS += \
@@ -57,6 +51,11 @@ ifeq ($(FASTBOOT_USE_G_ORIGINAL_PROTOCOL), yes)
 	OBJS += \
 	$(LOCAL_DIR)/dl_commands.o
 
+ifeq ($(PLATFORM_FASTBOOT_EMPTY_STORAGE), yes)
+	OBJS += \
+	$(LOCAL_DIR)/blockheader.o
+endif
+
 	CFLAGS += -DUSE_G_ORIGINAL_PROTOCOL
 else
 	SECRO_TYPE :=
@@ -64,10 +63,9 @@ else
 	$(LOCAL_DIR)/sparse_state_machine.o\
 	$(LOCAL_DIR)/download_commands.o
 
-endif	
+endif
 
 ifeq ($(MTK_SECURITY_SW_SUPPORT), yes)
-    OBJS += $(LOCAL_DIR)/sec_img_auth.o
 ifeq ($(MTK_SEC_FASTBOOT_UNLOCK_SUPPORT), yes)
 	OBJS += $(LOCAL_DIR)/sec_unlock.o
 endif
@@ -91,3 +89,10 @@ SEC_PLAT_OBJS  := $(patsubst $(SEC_PLAT_DIR)/%.c,$(MT_BOOT_OBJ_DIR)/platform/%.o
 OBJS += $(AUTH_LOCAL_OBJS) $(SEC_LOCAL_OBJS) $(SEC_PLAT_LOCAL_OBJS) $(DEVINFO_LOCAL_OBJS)
 endif
 
+ifeq ($(BUILD_HW_CRYPTO_LIB),yes)
+HW_CRYPTO_DIR  := $(LOCAL_DIR)/hw_crypto
+INCLUDES += -I$(HW_CRYPTO_DIR)/inc
+HW_CRYPTO_LOCAL_OBJS := $(patsubst $(HW_CRYPTO_DIR)/%.c,$(HW_CRYPTO_DIR)/%.o,$(wildcard $(HW_CRYPTO_DIR)/*.c))
+HW_CRYPTO_OBJS := $(patsubst $(HW_CRYPTO_DIR)/%.c,$(MT_BOOT_OBJ_DIR)/hw_crypto/%.o,$(wildcard $(HW_CRYPTO_DIR)/*.c))
+OBJS += $(HW_CRYPTO_LOCAL_OBJS)
+endif

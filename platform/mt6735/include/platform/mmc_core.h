@@ -149,30 +149,30 @@ typedef enum {
 #define SD_ATOCMD_STOP_TRANSMISSION     (12 | SD_CMD_AUTO_BIT)
 #define SD_ATOCMD_SET_BLOCK_COUNT       (23 | SD_CMD_AUTO_BIT)
 
-#define MMC_VDD_145_150     0x00000001  /* VDD voltage 1.45 - 1.50 */
-#define MMC_VDD_150_155     0x00000002  /* VDD voltage 1.50 - 1.55 */
-#define MMC_VDD_155_160     0x00000004  /* VDD voltage 1.55 - 1.60 */
-#define MMC_VDD_160_165     0x00000008  /* VDD voltage 1.60 - 1.65 */
-#define MMC_VDD_165_170     0x00000080  /* VDD voltage 1.65 - 1.70 */
-#define MMC_VDD_17_18       0x00000080  /* VDD voltage 1.7 - 1.8 */
-#define MMC_VDD_18_19       0x00000080  /* VDD voltage 1.8 - 1.9 */
-#define MMC_VDD_19_20       0x00000080  /* VDD voltage 1.9 - 2.0 */ /* 1.65 - 1.95 code as 0x80 */
-#define MMC_VDD_20_21       0x00000100  /* VDD voltage 2.0 ~ 2.1 */
-#define MMC_VDD_21_22       0x00000200  /* VDD voltage 2.1 ~ 2.2 */
-#define MMC_VDD_22_23       0x00000400  /* VDD voltage 2.2 ~ 2.3 */
-#define MMC_VDD_23_24       0x00000800  /* VDD voltage 2.3 ~ 2.4 */
-#define MMC_VDD_24_25       0x00001000  /* VDD voltage 2.4 ~ 2.5 */
-#define MMC_VDD_25_26       0x00002000  /* VDD voltage 2.5 ~ 2.6 */
-#define MMC_VDD_26_27       0x00004000  /* VDD voltage 2.6 ~ 2.7 */
-#define MMC_VDD_27_28       0x00008000  /* VDD voltage 2.7 ~ 2.8 */
-#define MMC_VDD_28_29       0x00010000  /* VDD voltage 2.8 ~ 2.9 */
-#define MMC_VDD_29_30       0x00020000  /* VDD voltage 2.9 ~ 3.0 */
-#define MMC_VDD_30_31       0x00040000  /* VDD voltage 3.0 ~ 3.1 */
-#define MMC_VDD_31_32       0x00080000  /* VDD voltage 3.1 ~ 3.2 */
-#define MMC_VDD_32_33       0x00100000  /* VDD voltage 3.2 ~ 3.3 */
-#define MMC_VDD_33_34       0x00200000  /* VDD voltage 3.3 ~ 3.4 */
-#define MMC_VDD_34_35       0x00400000  /* VDD voltage 3.4 ~ 3.5 */
 #define MMC_VDD_35_36       0x00800000  /* VDD voltage 3.5 ~ 3.6 */
+#define MMC_VDD_34_35       0x00400000  /* VDD voltage 3.4 ~ 3.5 */
+#define MMC_VDD_33_34       0x00200000  /* VDD voltage 3.3 ~ 3.4 */
+#define MMC_VDD_32_33       0x00100000  /* VDD voltage 3.2 ~ 3.3 */
+#define MMC_VDD_31_32       0x00080000  /* VDD voltage 3.1 ~ 3.2 */
+#define MMC_VDD_30_31       0x00040000  /* VDD voltage 3.0 ~ 3.1 */
+#define MMC_VDD_29_30       0x00020000  /* VDD voltage 2.9 ~ 3.0 */
+#define MMC_VDD_28_29       0x00010000  /* VDD voltage 2.8 ~ 2.9 */
+#define MMC_VDD_27_28       0x00008000  /* VDD voltage 2.7 ~ 2.8 */
+#define MMC_VDD_26_27       0x00004000  /* VDD voltage 2.6 ~ 2.7 */
+#define MMC_VDD_25_26       0x00002000  /* VDD voltage 2.5 ~ 2.6 */
+#define MMC_VDD_24_25       0x00001000  /* VDD voltage 2.4 ~ 2.5 */
+#define MMC_VDD_23_24       0x00000800  /* VDD voltage 2.3 ~ 2.4 */
+#define MMC_VDD_22_23       0x00000400  /* VDD voltage 2.2 ~ 2.3 */
+#define MMC_VDD_21_22       0x00000200  /* VDD voltage 2.1 ~ 2.2 */
+#define MMC_VDD_20_21       0x00000100  /* VDD voltage 2.0 ~ 2.1 */
+#define MMC_VDD_19_20       0x00000080  /* VDD voltage 1.9 - 2.0 */ /* 1.65 - 1.95 code as 0x80 */
+#define MMC_VDD_18_19       0x00000080  /* VDD voltage 1.8 - 1.9 */
+#define MMC_VDD_17_18       0x00000080  /* VDD voltage 1.7 - 1.8 */
+#define MMC_VDD_165_170     0x00000080  /* VDD voltage 1.65 - 1.70 */
+#define MMC_VDD_160_165     0x00000008  /* VDD voltage 1.60 - 1.65 */
+#define MMC_VDD_155_160     0x00000004  /* VDD voltage 1.55 - 1.60 */
+#define MMC_VDD_150_155     0x00000002  /* VDD voltage 1.50 - 1.55 */
+#define MMC_VDD_145_150     0x00000001  /* VDD voltage 1.45 - 1.50 */
 #define MMC_CARD_BUSY       0x80000000  /* Card Power up status bit */
 
 #define MMC_VDD_165_195     0x00000080  /* VDD voltage 1.65 - 1.95 */ //Add this line by reference to include/linux/mmc/host.h in linux kernel
@@ -227,74 +227,75 @@ typedef enum {
 #define MMC_STATE_HS400         (1<<8)
 #define MMC_STATE_BACKYARD      (1<<9)
 
-#define R1_OUT_OF_RANGE         (1UL << 31) /* er, c */
-#define R1_ADDRESS_ERROR        (1 << 30)   /* erx, c */
-#define R1_BLOCK_LEN_ERROR      (1 << 29)   /* er, c */
-#define R1_ERASE_SEQ_ERROR      (1 << 28)   /* er, c */
-#define R1_ERASE_PARAM          (1 << 27)   /* ex, c */
-#define R1_WP_VIOLATION         (1 << 26)   /* erx, c */
-#define R1_CARD_IS_LOCKED       (1 << 25)   /* sx, a */
-#define R1_LOCK_UNLOCK_FAILED   (1 << 24)   /* erx, c */
-#define R1_COM_CRC_ERROR        (1 << 23)   /* er, b */
-#define R1_ILLEGAL_COMMAND      (1 << 22)   /* er, b */
-#define R1_CARD_ECC_FAILED      (1 << 21)   /* ex, c */
-#define R1_CC_ERROR             (1 << 20)   /* erx, c */
-#define R1_ERROR                (1 << 19)   /* erx, c */
-#define R1_UNDERRUN             (1 << 18)   /* ex, c */
-#define R1_OVERRUN              (1 << 17)   /* ex, c */
-#define R1_CID_CSD_OVERWRITE    (1 << 16)   /* erx, c, CID/CSD overwrite */
-#define R1_WP_ERASE_SKIP        (1 << 15)   /* sx, c */
-#define R1_CARD_ECC_DISABLED    (1 << 14)   /* sx, a */
-#define R1_ERASE_RESET          (1 << 13)   /* sr, c */
-#define R1_STATUS(x)            (x & 0xFFFFE000)
-#define R1_CURRENT_STATE(x)     ((x & 0x00001E00) >> 9) /* sx, b (4 bits) */
-#define R1_READY_FOR_DATA       (1 << 8)    /* sx, a */
-#define R1_SWITCH_ERROR         (1 << 7)    /* ex, b */
-#define R1_URGENT_BKOPS         (1 << 6)    /* sr, a */
 #define R1_APP_CMD              (1 << 5)    /* sr, c */
+#define R1_URGENT_BKOPS         (1 << 6)    /* sr, a */
+#define R1_SWITCH_ERROR         (1 << 7)    /* ex, b */
+#define R1_READY_FOR_DATA       (1 << 8)    /* sx, a */
+#define R1_CURRENT_STATE(x)     ((x & 0x00001E00) >> 9) /* sx, b (4 bits) */
+#define R1_STATUS(x)            (x & 0xFFFFE000)
+#define R1_ERASE_RESET          (1 << 13)   /* sr, c */
+#define R1_CARD_ECC_DISABLED    (1 << 14)   /* sx, a */
+#define R1_WP_ERASE_SKIP        (1 << 15)   /* sx, c */
+#define R1_CID_CSD_OVERWRITE    (1 << 16)   /* erx, c, CID/CSD overwrite */
+#define R1_OVERRUN              (1 << 17)   /* ex, c */
+#define R1_UNDERRUN             (1 << 18)   /* ex, c */
+#define R1_ERROR                (1 << 19)   /* erx, c */
+#define R1_CC_ERROR             (1 << 20)   /* erx, c */
+#define R1_CARD_ECC_FAILED      (1 << 21)   /* ex, c */
+#define R1_ILLEGAL_COMMAND      (1 << 22)   /* er, b */
+#define R1_COM_CRC_ERROR        (1 << 23)   /* er, b */
+#define R1_LOCK_UNLOCK_FAILED   (1 << 24)   /* erx, c */
+#define R1_CARD_IS_LOCKED       (1 << 25)   /* sx, a */
+#define R1_WP_VIOLATION         (1 << 26)   /* erx, c */
+#define R1_ERASE_PARAM          (1 << 27)   /* ex, c */
+#define R1_ERASE_SEQ_ERROR      (1 << 28)   /* er, c */
+#define R1_BLOCK_LEN_ERROR      (1 << 29)   /* er, c */
+#define R1_ADDRESS_ERROR        (1 << 30)   /* erx, c */
+#define R1_OUT_OF_RANGE         (1UL << 31) /* er, c */
+
 
 /*
  * Card Command Classes (CCC)
  */
-#define CCC_BASIC               (1<<0)  /* (0) Basic protocol functions */
-                                        /* (CMD0,1,2,3,4,7,9,10,12,13,15) */
-#define CCC_STREAM_READ         (1<<1)  /* (1) Stream read commands */
-                                        /* (CMD11) */
-#define CCC_BLOCK_READ          (1<<2)  /* (2) Block read commands */
-                                        /* (CMD16,17,18) */
-#define CCC_STREAM_WRITE        (1<<3)  /* (3) Stream write commands */
-                                        /* (CMD20) */
-#define CCC_BLOCK_WRITE         (1<<4)  /* (4) Block write commands */
-                                        /* (CMD16,24,25,26,27) */
-#define CCC_ERASE               (1<<5)  /* (5) Ability to erase blocks */
-                                        /* (CMD32,33,34,35,36,37,38,39) */
-#define CCC_WRITE_PROT          (1<<6)  /* (6) Able to write protect blocks */
-                                        /* (CMD28,29,30) */
-#define CCC_LOCK_CARD           (1<<7)  /* (7) Able to lock down card */
-                                        /* (CMD16,CMD42) */
-#define CCC_APP_SPEC            (1<<8)  /* (8) Application specific */
-                                        /* (CMD55,56,57,ACMD*) */
-#define CCC_IO_MODE             (1<<9)  /* (9) I/O mode */
-                                        /* (CMD5,39,40,52,53) */
 #define CCC_SWITCH              (1<<10) /* (10) High speed switch */
-                                        /* (CMD6,34,35,36,37,50) */
-                                        /* (11) Reserved */
-                                        /* (CMD?) */
+											/* (CMD6,34,35,36,37,50) */
+											/* (11) Reserved */
+											/* (CMD?) */
+#define CCC_IO_MODE             (1<<9)  /* (9) I/O mode */
+											/* (CMD5,39,40,52,53) */
+#define CCC_APP_SPEC            (1<<8)  /* (8) Application specific */
+											/* (CMD55,56,57,ACMD*) */
+#define CCC_LOCK_CARD           (1<<7)  /* (7) Able to lock down card */
+											/* (CMD16,CMD42) */
+#define CCC_WRITE_PROT          (1<<6)  /* (6) Able to write protect blocks */
+											/* (CMD28,29,30) */
+#define CCC_ERASE               (1<<5)  /* (5) Ability to erase blocks */
+											/* (CMD32,33,34,35,36,37,38,39) */
+#define CCC_BLOCK_WRITE         (1<<4)  /* (4) Block write commands */
+											/* (CMD16,24,25,26,27) */
+#define CCC_STREAM_WRITE        (1<<3)  /* (3) Stream write commands */
+											/* (CMD20) */
+#define CCC_BLOCK_READ          (1<<2)  /* (2) Block read commands */
+											/* (CMD16,17,18) */
+#define CCC_STREAM_READ         (1<<1)  /* (1) Stream read commands */
+											/* (CMD11) */
+#define CCC_BASIC               (1<<0)  /* (0) Basic protocol functions */
+											/* (CMD0,1,2,3,4,7,9,10,12,13,15) */
+
 
 /*
  * CSD field definitions
  */
-
-#define CSD_STRUCT_VER_1_0  0   /* Valid for system specification 1.0 - 1.2 */
-#define CSD_STRUCT_VER_1_1  1   /* Valid for system specification 1.4 - 2.2 */
-#define CSD_STRUCT_VER_1_2  2   /* Valid for system specification 3.1 - 3.2 - 3.31 - 4.0 - 4.1 */
 #define CSD_STRUCT_EXT_CSD  3   /* Version is coded in CSD_STRUCTURE in EXT_CSD */
+#define CSD_STRUCT_VER_1_2  2   /* Valid for system specification 3.1 - 3.2 - 3.31 - 4.0 - 4.1 */
+#define CSD_STRUCT_VER_1_1  1   /* Valid for system specification 1.4 - 2.2 */
+#define CSD_STRUCT_VER_1_0  0   /* Valid for system specification 1.0 - 1.2 */
 
-#define CSD_SPEC_VER_0      0   /* Implements system specification 1.0 - 1.2 */
-#define CSD_SPEC_VER_1      1   /* Implements system specification 1.4 */
-#define CSD_SPEC_VER_2      2   /* Implements system specification 2.0 - 2.2 */
-#define CSD_SPEC_VER_3      3   /* Implements system specification 3.1 - 3.2 - 3.31 */
 #define CSD_SPEC_VER_4      4   /* Implements system specification 4.0 - 4.1 */
+#define CSD_SPEC_VER_3      3   /* Implements system specification 3.1 - 3.2 - 3.31 */
+#define CSD_SPEC_VER_2      2   /* Implements system specification 2.0 - 2.2 */
+#define CSD_SPEC_VER_1      1   /* Implements system specification 1.4 */
+#define CSD_SPEC_VER_0      0   /* Implements system specification 1.0 - 1.2 */
 
 /*
  * EXT_CSD fields
@@ -367,7 +368,7 @@ typedef enum {
 #define EXT_CSD_PWR_CL_DDR_52_360       239 /* R */
 #define EXT_CSD_INI_TIMEOUT_AP          241 /* R */
 #define EXT_CSD_CORRECT_PRG_SECTS_NUM   242 /* R, 4 bytes (4.41) */
-#define EXT_CSD_FIRMWARE_VERSION        261 /* R (5.0) */
+#define EXT_CSD_FIRMWARE_VERSION        254 /* R (5.0) */
 #define EXT_CSD_BKOPS_STATUS            246 /* R (4.41) */
 #define EXT_CSD_BKOPS_SUPP              502 /* R (4.41) */
 #define EXT_CSD_HPI_FEATURE             503 /* R (4.41) */
@@ -908,35 +909,35 @@ struct mmc_data {
 #define mmc_card_set_sd(c)          ((c)->type |= MMC_TYPE_SD)
 #define mmc_card_set_sdio(c)        ((c)->type |= MMC_TYPE_SDIO)
 
-#define mmc_card_present(c)         ((c)->state & MMC_STATE_PRESENT)
-#define mmc_card_readonly(c)        ((c)->state & MMC_STATE_READONLY)
-#define mmc_card_backyard(c)        ((c)->state & MMC_STATE_BACKYARD)
-#define mmc_card_highspeed(c)       ((c)->state & MMC_STATE_HIGHSPEED)
-#define mmc_card_uhs1(c)            ((c)->state & MMC_STATE_UHS1)
-#define mmc_card_hs200(c)           ((c)->state & MMC_STATE_HS200)
-#define mmc_card_hs400(c)           ((c)->state & MMC_STATE_HS400)
-#define mmc_card_ddr(c)             ((c)->state & MMC_STATE_DDR)
-#define mmc_card_blockaddr(c)       ((c)->state & MMC_STATE_BLOCKADDR)
 #define mmc_card_highcaps(c)        ((c)->state & MMC_STATE_HIGHCAPS)
+#define mmc_card_blockaddr(c)       ((c)->state & MMC_STATE_BLOCKADDR)
+#define mmc_card_ddr(c)             ((c)->state & MMC_STATE_DDR)
+#define mmc_card_hs400(c)           ((c)->state & MMC_STATE_HS400)
+#define mmc_card_hs200(c)           ((c)->state & MMC_STATE_HS200)
+#define mmc_card_uhs1(c)            ((c)->state & MMC_STATE_UHS1)
+#define mmc_card_highspeed(c)       ((c)->state & MMC_STATE_HIGHSPEED)
+#define mmc_card_backyard(c)        ((c)->state & MMC_STATE_BACKYARD)
+#define mmc_card_readonly(c)        ((c)->state & MMC_STATE_READONLY)
+#define mmc_card_present(c)         ((c)->state & MMC_STATE_PRESENT)
 
-#define mmc_card_set_present(c)     ((c)->state |= MMC_STATE_PRESENT)
-#define mmc_card_set_readonly(c)    ((c)->state |= MMC_STATE_READONLY)
-#define mmc_card_set_backyard(c)    ((c)->state |= MMC_STATE_BACKYARD)
-#define mmc_card_set_highspeed(c)   ((c)->state |= MMC_STATE_HIGHSPEED)
-#define mmc_card_set_uhs1(c)        ((c)->state |= MMC_STATE_UHS1)
-#define mmc_card_set_hs200(c)       ((c)->state |= MMC_STATE_HS200)
-#define mmc_card_set_hs400(c)       ((c)->state |= MMC_STATE_HS400)
-#define mmc_card_set_ddr(c)         ((c)->state |= MMC_STATE_DDR)
 #define mmc_card_set_blockaddr(c)   ((c)->state |= MMC_STATE_BLOCKADDR)
+#define mmc_card_set_ddr(c)         ((c)->state |= MMC_STATE_DDR)
+#define mmc_card_set_hs400(c)       ((c)->state |= MMC_STATE_HS400)
+#define mmc_card_set_hs200(c)       ((c)->state |= MMC_STATE_HS200)
+#define mmc_card_set_uhs1(c)        ((c)->state |= MMC_STATE_UHS1)
+#define mmc_card_set_highspeed(c)   ((c)->state |= MMC_STATE_HIGHSPEED)
+#define mmc_card_set_backyard(c)    ((c)->state |= MMC_STATE_BACKYARD)
+#define mmc_card_set_readonly(c)    ((c)->state |= MMC_STATE_READONLY)
+#define mmc_card_set_present(c)     ((c)->state |= MMC_STATE_PRESENT)
 
-#define mmc_card_clear_present(c)     ((c)->state &= ~MMC_STATE_PRESENT)
-#define mmc_card_clear_readonly(c)    ((c)->state &= ~MMC_STATE_READONLY)
-#define mmc_card_clear_highspeed(c)   ((c)->state &= ~MMC_STATE_HIGHSPEED)
-#define mmc_card_clear_uhs1(c)        ((c)->state &= ~MMC_STATE_UHS1)
-#define mmc_card_clear_hs200(c)       ((c)->state &= ~MMC_STATE_HS200)
-#define mmc_card_clear_hs400(c)       ((c)->state &= ~MMC_STATE_HS400)
-#define mmc_card_clear_ddr(c)         ((c)->state &= ~MMC_STATE_DDR)
 #define mmc_card_clear_blockaddr(c)   ((c)->state &= ~MMC_STATE_BLOCKADDR)
+#define mmc_card_clear_ddr(c)         ((c)->state &= ~MMC_STATE_DDR)
+#define mmc_card_clear_hs400(c)       ((c)->state &= ~MMC_STATE_HS400)
+#define mmc_card_clear_hs200(c)       ((c)->state &= ~MMC_STATE_HS200)
+#define mmc_card_clear_uhs1(c)        ((c)->state &= ~MMC_STATE_UHS1)
+#define mmc_card_clear_highspeed(c)   ((c)->state &= ~MMC_STATE_HIGHSPEED)
+#define mmc_card_clear_readonly(c)    ((c)->state &= ~MMC_STATE_READONLY)
+#define mmc_card_clear_present(c)     ((c)->state &= ~MMC_STATE_PRESENT)
 
 #define mmc_card_clr_ddr(c)         ((c)->state &= ~MMC_STATE_DDR)
 #define mmc_card_clr_speed_mode(c)  ((c)->state &= ~(MMC_STATE_HS400 | MMC_STATE_HS200 | MMC_STATE_UHS1 | MMC_STATE_HIGHSPEED | MMC_STATE_BACKYARD))

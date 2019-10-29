@@ -42,7 +42,7 @@ FUNCTION(arch_disable_cache)
 	orr		r3, r3, #(1<<7)
 	msr		cpsr, r3
 #endif
-	
+
 .Ldcache_disable:
 	tst		r0, #DCACHE
 	beq		.Licache_disable
@@ -88,7 +88,7 @@ FUNCTION(arch_enable_cache)
 	orr		r3, r3, #(1<<7)
 	msr		cpsr, r3
 #endif
-	
+
 .Ldcache_enable:
 	tst		r0, #DCACHE
 	beq		.Licache_enable
@@ -180,7 +180,7 @@ FUNCTION(arch_enable_cache)
 
 	mrs		r12, cpsr					// save the old interrupt state
 	.word	0xf10c01c0	/* cpsid iaf */	// interrupts disabled
-	
+
 .Ldcache_enable:
 	tst		r7, #DCACHE
 	beq		.Licache_enable
@@ -221,41 +221,41 @@ FUNCTION(arch_enable_cache)
 // flush & invalidate cache routine, trashes r0-r6, r9-r11
 flush_invalidate_cache_v7:
 	/* from ARMv7 manual, B2-17 */
-	MRC 	p15, 1, R0, c0, c0, 1 		// Read CLIDR 
-	ANDS 	R3, R0, #0x7000000 
-	MOV 	R3, R3, LSR #23 			// Cache level value (naturally aligned) 
-	BEQ 	.Lfinished 
-	MOV 	R10, #0 
+	MRC 	p15, 1, R0, c0, c0, 1 		// Read CLIDR
+	ANDS 	R3, R0, #0x7000000
+	MOV 	R3, R3, LSR #23 			// Cache level value (naturally aligned)
+	BEQ 	.Lfinished
+	MOV 	R10, #0
 .Loop1:
-	ADD 	R2, R10, R10, LSR #1 		// Work out 3xcachelevel 
-	MOV 	R1, R0, LSR R2 				// bottom 3 bits are the Cache type for this level 
-	AND 	R1, R1, #7 					// get those 3 bits alone 
-	CMP 	R1, #2 
-	BLT 	.Lskip 						// no cache or only instruction cache at this level 
-	MCR 	p15, 2, R10, c0, c0, 0 		// write the Cache Size selection register 
-	.word	0xf57ff06f	// ISB 			// ISB to sync the change to the CacheSizeID reg 
-	MRC 	p15, 1, R1, c0, c0, 0 		// reads current Cache Size ID register 
-	AND 	R2, R1, #0x7 				// extract the line length field 
-	ADD 	R2, R2, #4 					// add 4 for the line length offset (log2 16 bytes) 
-	LDR 	R4, =0x3FF 
-	ANDS 	R4, R4, R1, LSR #3 			// R4 is the max number on the way size (right aligned) 
-	CLZ 	R5, R4 						// R5 is the bit position of the way size increment 
-	LDR 	R6, =0x00007FFF 
-	ANDS 	R6, R6, R1, LSR #13 		// R6 is the max number of the index size (right aligned) 
+	ADD 	R2, R10, R10, LSR #1 		// Work out 3xcachelevel
+	MOV 	R1, R0, LSR R2 				// bottom 3 bits are the Cache type for this level
+	AND 	R1, R1, #7 					// get those 3 bits alone
+	CMP 	R1, #2
+	BLT 	.Lskip 						// no cache or only instruction cache at this level
+	MCR 	p15, 2, R10, c0, c0, 0 		// write the Cache Size selection register
+	.word	0xf57ff06f	// ISB 			// ISB to sync the change to the CacheSizeID reg
+	MRC 	p15, 1, R1, c0, c0, 0 		// reads current Cache Size ID register
+	AND 	R2, R1, #0x7 				// extract the line length field
+	ADD 	R2, R2, #4 					// add 4 for the line length offset (log2 16 bytes)
+	LDR 	R4, =0x3FF
+	ANDS 	R4, R4, R1, LSR #3 			// R4 is the max number on the way size (right aligned)
+	CLZ 	R5, R4 						// R5 is the bit position of the way size increment
+	LDR 	R6, =0x00007FFF
+	ANDS 	R6, R6, R1, LSR #13 		// R6 is the max number of the index size (right aligned)
 .Loop2:
-	MOV 	R9, R4 						// R9 working copy of the max way size (right aligned) 
+	MOV 	R9, R4 						// R9 working copy of the max way size (right aligned)
 .Loop3:
-	ORR 	R11, R10, R9, LSL R5 		// factor in the way number and cache number into R11 
-	ORR 	R11, R11, R6, LSL R2 		// factor in the index number 
-	MCR 	p15, 0, R11, c7, c14, 2 	// clean & invalidate by set/way 
-	SUBS 	R9, R9, #1 					// decrement the way number 
-	BGE 	.Loop3 
-	SUBS 	R6, R6, #1 					// decrement the index 
-	BGE 	.Loop2 
+	ORR 	R11, R10, R9, LSL R5 		// factor in the way number and cache number into R11
+	ORR 	R11, R11, R6, LSL R2 		// factor in the index number
+	MCR 	p15, 0, R11, c7, c14, 2 	// clean & invalidate by set/way
+	SUBS 	R9, R9, #1 					// decrement the way number
+	BGE 	.Loop3
+	SUBS 	R6, R6, #1 					// decrement the index
+	BGE 	.Loop2
 .Lskip:
- 	ADD 	R10, R10, #2 					// increment the cache number 
-	CMP 	R3, R10 
-	BGT 	.Loop1 
+ 	ADD 	R10, R10, #2 					// increment the cache number
+	CMP 	R3, R10
+	BGT 	.Loop1
 
 .Lfinished:
 	mov		r10, #0
@@ -267,41 +267,41 @@ flush_invalidate_cache_v7:
 // invalidate cache routine, trashes r0-r6, r9-r11
 invalidate_cache_v7:
 	/* from ARMv7 manual, B2-17 */
-	MRC 	p15, 1, R0, c0, c0, 1 		// Read CLIDR 
-	ANDS 	R3, R0, #0x7000000 
-	MOV 	R3, R3, LSR #23 			// Cache level value (naturally aligned) 
+	MRC 	p15, 1, R0, c0, c0, 1 		// Read CLIDR
+	ANDS 	R3, R0, #0x7000000
+	MOV 	R3, R3, LSR #23 			// Cache level value (naturally aligned)
 	BEQ 	.Lfinished_invalidate
-	MOV 	R10, #0 
+	MOV 	R10, #0
 .Loop1_invalidate:
-	ADD 	R2, R10, R10, LSR #1 		// Work out 3xcachelevel 
-	MOV 	R1, R0, LSR R2 				// bottom 3 bits are the Cache type for this level 
-	AND 	R1, R1, #7 					// get those 3 bits alone 
-	CMP 	R1, #2 
-	BLT 	.Lskip_invalidate 			// no cache or only instruction cache at this level 
-	MCR 	p15, 2, R10, c0, c0, 0 		// write the Cache Size selection register 
-	.word	0xf57ff06f	// ISB 			// ISB to sync the change to the CacheSizeID reg 
-	MRC 	p15, 1, R1, c0, c0, 0 		// reads current Cache Size ID register 
-	AND 	R2, R1, #0x7 				// extract the line length field 
-	ADD 	R2, R2, #4 					// add 4 for the line length offset (log2 16 bytes) 
-	LDR 	R4, =0x3FF 
-	ANDS 	R4, R4, R1, LSR #3 			// R4 is the max number on the way size (right aligned) 
-	CLZ 	R5, R4 						// R5 is the bit position of the way size increment 
-	LDR 	R6, =0x00007FFF 
-	ANDS 	R6, R6, R1, LSR #13 		// R6 is the max number of the index size (right aligned) 
+	ADD 	R2, R10, R10, LSR #1 		// Work out 3xcachelevel
+	MOV 	R1, R0, LSR R2 				// bottom 3 bits are the Cache type for this level
+	AND 	R1, R1, #7 					// get those 3 bits alone
+	CMP 	R1, #2
+	BLT 	.Lskip_invalidate 			// no cache or only instruction cache at this level
+	MCR 	p15, 2, R10, c0, c0, 0 		// write the Cache Size selection register
+	.word	0xf57ff06f	// ISB 			// ISB to sync the change to the CacheSizeID reg
+	MRC 	p15, 1, R1, c0, c0, 0 		// reads current Cache Size ID register
+	AND 	R2, R1, #0x7 				// extract the line length field
+	ADD 	R2, R2, #4 					// add 4 for the line length offset (log2 16 bytes)
+	LDR 	R4, =0x3FF
+	ANDS 	R4, R4, R1, LSR #3 			// R4 is the max number on the way size (right aligned)
+	CLZ 	R5, R4 						// R5 is the bit position of the way size increment
+	LDR 	R6, =0x00007FFF
+	ANDS 	R6, R6, R1, LSR #13 		// R6 is the max number of the index size (right aligned)
 .Loop2_invalidate:
-	MOV 	R9, R4 						// R9 working copy of the max way size (right aligned) 
+	MOV 	R9, R4 						// R9 working copy of the max way size (right aligned)
 .Loop3_invalidate:
-	ORR 	R11, R10, R9, LSL R5 		// factor in the way number and cache number into R11 
-	ORR 	R11, R11, R6, LSL R2 		// factor in the index number 
-	MCR 	p15, 0, R11, c7, c6, 2 		// invalidate by set/way 
-	SUBS 	R9, R9, #1 					// decrement the way number 
-	BGE 	.Loop3_invalidate 
-	SUBS 	R6, R6, #1 					// decrement the index 
-	BGE 	.Loop2_invalidate 
+	ORR 	R11, R10, R9, LSL R5 		// factor in the way number and cache number into R11
+	ORR 	R11, R11, R6, LSL R2 		// factor in the index number
+	MCR 	p15, 0, R11, c7, c6, 2 		// invalidate by set/way
+	SUBS 	R9, R9, #1 					// decrement the way number
+	BGE 	.Loop3_invalidate
+	SUBS 	R6, R6, #1 					// decrement the index
+	BGE 	.Loop2_invalidate
 .Lskip_invalidate:
- 	ADD 	R10, R10, #2 				// increment the cache number 
-	CMP 	R3, R10 
-	BGT 	.Loop1_invalidate 
+ 	ADD 	R10, R10, #2 				// increment the cache number
+	CMP 	R3, R10
+	BGT 	.Loop1_invalidate
 
 .Lfinished_invalidate:
 	mov		r10, #0
@@ -327,14 +327,18 @@ FUNCTION(arch_clean_cache_range)
 	add		r2, r0, r1			// get the end address
 	bic             r0, #(CACHE_LINE - 1)           // align the start address
 0:
+#ifdef  CONFIG_ARM_ERRATA_855873
+	mcr		p15, 0, r0, c7, c14, 1		// clean cache to PoC by MVA (DCCIMVAC )
+#else
 	mcr		p15, 0, r0, c7, c10, 1		// clean cache to PoC by MVA
+#endif
 	add		r0, r0, #CACHE_LINE
 	cmp		r0, r2
 	blo		0b
-	
+
 	mov		r0, #0
 	mcr		p15, 0, r0, c7, c10, 4		// data sync barrier (formerly drain write buffer)
- 
+
 	mov		r0, r4
 	mov		r1, r5
 #ifdef HAVE_CACHE_PL310
@@ -377,7 +381,7 @@ FUNCTION(arch_sync_cache_range)
 
 	mov     r0, #0
 	mcr     p15, 0, r0, c7, c5, 0       // invalidate icache to PoU
-	
+
 	pop     { pc }
 
 #else

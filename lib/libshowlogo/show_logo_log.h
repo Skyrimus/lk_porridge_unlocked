@@ -10,29 +10,33 @@ extern "C" {
 
 #ifdef  BUILD_LK
 
+#ifdef MTK_LOG_ENABLE
+#undef MTK_LOG_ENABLE
+#endif
+#define MTK_LOG_ENABLE 1
 #include <debug.h>
 #include <lib/zlib.h>
 
 #ifndef  LOG_ANIM
-#define  LOG_ANIM(x...)     dprintf(INFO, x)
+#define  LOG_ANIM(x...)     dprintf(0, x)
 
 #endif
 
 #else
 
-#include <cutils/xlog.h>
+#include <cutils/log.h>
 #include "zlib.h"
 
 #ifndef  LOG_ANIM
-#define  LOG_ANIM(x...)      XLOGD(x)
+#define  LOG_ANIM(x...)      ALOGD(x)
 
 #endif
 
 #endif
 
 
-        
-    
+
+
 #ifdef __cplusplus
 }
 #endif

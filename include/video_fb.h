@@ -1,4 +1,4 @@
-										   
+
 
 #ifndef _VIDEO_FB_H_
 #define _VIDEO_FB_H_
@@ -14,27 +14,28 @@
 #define CFB_888RGB_24BIT        4
 #define CFB_332RGB_8BIT         5
 
+#define GDF_16BIT_565RGB        2
 #define GDF_32BIT_X888RGB       3
 
 
 typedef struct {
-    unsigned int pciBase;
+	unsigned int pciBase;
 	unsigned int isaBase;
-    unsigned int dprBase;
+	unsigned int dprBase;
 	unsigned int frameAdrs;
-    unsigned int vprBase;
-    unsigned int cprBase;
-    unsigned int memSize;
-    unsigned int mode;
+	unsigned int vprBase;
+	unsigned int cprBase;
+	unsigned int memSize;
+	unsigned int mode;
 	unsigned int fg;
-    unsigned int bg;
-    unsigned int gdfIndex;
-    unsigned int gdfBytesPP;
-    unsigned int plnSizeX;
-    unsigned int plnSizeY;
-    unsigned int winSizeX;
-    unsigned int winSizeY;
-    char modeIdent[80];
+	unsigned int bg;
+	unsigned int gdfIndex;
+	unsigned int gdfBytesPP;
+	unsigned int plnSizeX;
+	unsigned int plnSizeY;
+	unsigned int winSizeX;
+	unsigned int winSizeY;
+	char modeIdent[80];
 } GraphicDevice;
 
 
@@ -45,7 +46,7 @@ void video_set_lut (
     unsigned char r,              /* red */
     unsigned char g,              /* green */
     unsigned char b               /* blue */
-    );
+);
 
 
 #endif /*_VIDEO_FB_H_ */

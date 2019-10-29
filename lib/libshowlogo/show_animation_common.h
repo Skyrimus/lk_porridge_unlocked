@@ -7,9 +7,9 @@
  * reproduction, modification, use or disclosure of MediaTek Software, and
  * information contained herein, in whole or in part, shall be strictly
  * prohibited.
- * 
+ *
  * MediaTek Inc. (C) 2010. All rights reserved.
- * 
+ *
  * BY OPENING THIS FILE, RECEIVER HEREBY UNEQUIVOCALLY ACKNOWLEDGES AND AGREES
  * THAT THE SOFTWARE/FIRMWARE AND ITS DOCUMENTATIONS ("MEDIATEK SOFTWARE")
  * RECEIVED FROM MEDIATEK AND/OR ITS REPRESENTATIVES ARE PROVIDED TO RECEIVER
@@ -57,8 +57,8 @@ typedef struct {
 #define VERION_WIRELESS_CHARGING_ANIMATION  2
 
 // version_0 animation
-#define ANIM_V0_REGIONS  4 
-#define ANIM_V0_SPACE_AFTER_REGION  4 
+#define ANIM_V0_REGIONS  4
+#define ANIM_V0_SPACE_AFTER_REGION  4
 
 static const RECT_REGION_T bar_rect = {BAR_LEFT, BAR_TOP, BAR_RIGHT, BAR_BOTTOM};
 static const RECT_REGION_T percent_location_rect = {PERCENT_LEFT,PERCENT_TOP,PERCENT_RIGHT,PERCENT_BOTTOM};
@@ -74,11 +74,11 @@ static const int line_pic_size = (TOP_ANIMATION_RIGHT - TOP_ANIMATION_LEFT)*4;
 
 void fill_animation_logo(unsigned int index, void *fill_addr, void * dec_logo_addr, void * logo_addr, LCM_SCREEN_T phical_screen);
 void fill_animation_prog_bar(RECT_REGION_T rect_bar,
-                       unsigned int fgColor, 
+                       unsigned int fgColor,
                        unsigned int start_div, unsigned int occupied_div,
                         void *fill_addr, LCM_SCREEN_T phical_screen);
 
-                               
+
 void fill_animation_dynamic(unsigned int index, RECT_REGION_T rect, void *fill_addr, void * dec_logo_addr, void * logo_addr, LCM_SCREEN_T phical_screen);
 void fill_animation_number(unsigned int index, unsigned int number_position, void *fill_addr,  void * logo_addr, LCM_SCREEN_T phical_screen);
 void fill_animation_line(unsigned int index, unsigned int capacity_grids, void *fill_addr,  void * logo_addr, LCM_SCREEN_T phical_screen);
@@ -91,8 +91,8 @@ void fill_animation_battery_new(unsigned int capacity, void *fill_addr, void * d
 /* public interface function     */
 void fill_animation_battery_by_ver(unsigned int capacity, void *fill_addr, void * dec_logo_addr, void * logo_addr,
                         LCM_SCREEN_T phical_screen, int version);
-                        
-                        
+
+
 
 #ifdef __cplusplus
 }

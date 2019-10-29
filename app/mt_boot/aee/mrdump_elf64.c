@@ -1,3 +1,34 @@
+/* Copyright Statement:
+*
+* This software/firmware and related documentation ("MediaTek Software") are
+* protected under relevant copyright laws. The information contained herein
+* is confidential and proprietary to MediaTek Inc. and/or its licensors.
+* Without the prior written permission of MediaTek inc. and/or its licensors,
+* any reproduction, modification, use or disclosure of MediaTek Software,
+* and information contained herein, in whole or in part, shall be strictly prohibited.
+*/
+/* MediaTek Inc. (C) 2016. All rights reserved.
+*
+* BY OPENING THIS FILE, RECEIVER HEREBY UNEQUIVOCALLY ACKNOWLEDGES AND AGREES
+* THAT THE SOFTWARE/FIRMWARE AND ITS DOCUMENTATIONS ("MEDIATEK SOFTWARE")
+* RECEIVED FROM MEDIATEK AND/OR ITS REPRESENTATIVES ARE PROVIDED TO RECEIVER ON
+* AN "AS-IS" BASIS ONLY. MEDIATEK EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES,
+* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT.
+* NEITHER DOES MEDIATEK PROVIDE ANY WARRANTY WHATSOEVER WITH RESPECT TO THE
+* SOFTWARE OF ANY THIRD PARTY WHICH MAY BE USED BY, INCORPORATED IN, OR
+* SUPPLIED WITH THE MEDIATEK SOFTWARE, AND RECEIVER AGREES TO LOOK ONLY TO SUCH
+* THIRD PARTY FOR ANY WARRANTY CLAIM RELATING THERETO. RECEIVER EXPRESSLY ACKNOWLEDGES
+* THAT IT IS RECEIVER'S SOLE RESPONSIBILITY TO OBTAIN FROM ANY THIRD PARTY ALL PROPER LICENSES
+* CONTAINED IN MEDIATEK SOFTWARE. MEDIATEK SHALL ALSO NOT BE RESPONSIBLE FOR ANY MEDIATEK
+* SOFTWARE RELEASES MADE TO RECEIVER'S SPECIFICATION OR TO CONFORM TO A PARTICULAR
+* STANDARD OR OPEN FORUM. RECEIVER'S SOLE AND EXCLUSIVE REMEDY AND MEDIATEK'S ENTIRE AND
+* CUMULATIVE LIABILITY WITH RESPECT TO THE MEDIATEK SOFTWARE RELEASED HEREUNDER WILL BE,
+* AT MEDIATEK'S OPTION, TO REVISE OR REPLACE THE MEDIATEK SOFTWARE AT ISSUE,
+* OR REFUND ANY SOFTWARE LICENSE FEES OR SERVICE CHARGE PAID BY RECEIVER TO
+* MEDIATEK FOR SUCH MEDIATEK SOFTWARE AT ISSUE.
+*/
+
 #include <malloc.h>
 #include <string.h>
 #include <printf.h>
@@ -6,95 +37,96 @@
 
 static uint32_t roundup(uint32_t x, uint32_t y)
 {
-    return ((x + y - 1) / y) * y;
+	return ((x + y - 1) / y) * y;
 }
 
-struct memelfnote
-{
-    const char *name;
-    int type;
-    unsigned int datasz;
-    void *data;
+struct memelfnote {
+	const char *name;
+	int type;
+	unsigned int datasz;
+	void *data;
 };
 
 static int notesize(struct memelfnote *en)
 {
-    int sz;
+	int sz;
 
-    sz = sizeof(struct elf64_note);
-    sz += roundup((strlen(en->name) + 1), 4);
-    sz += roundup(en->datasz, 4);
+	sz = sizeof(struct elf64_note);
+	sz += roundup((strlen(en->name) + 1), 4);
+	sz += roundup(en->datasz, 4);
 
-    return sz;
+	return sz;
 }
 
 static uint8_t *storenote(struct memelfnote *men, uint8_t *bufp)
 {
-    struct elf64_note en;
-    en.n_namesz = strlen(men->name) + 1;
-    en.n_descsz = men->datasz;
-    en.n_type = men->type;
-    
-    memcpy(bufp, &en, sizeof(en));
-    bufp += sizeof(en);
-    
-    memcpy(bufp, men->name, en.n_namesz);
-    bufp += en.n_namesz;
-    
-    bufp = (uint8_t*) roundup((unsigned long)bufp, 4);
-    memcpy(bufp, men->data, men->datasz);
-    bufp += men->datasz;
+	struct elf64_note en;
+	en.n_namesz = strlen(men->name) + 1;
+	en.n_descsz = men->datasz;
+	en.n_type = men->type;
 
-    bufp = (uint8_t*) roundup((unsigned long)bufp, 4);
-    return bufp;
+	memcpy(bufp, &en, sizeof(en));
+	bufp += sizeof(en);
+
+	memcpy(bufp, men->name, en.n_namesz);
+	bufp += en.n_namesz;
+
+	bufp = (uint8_t*) roundup((unsigned long)bufp, 4);
+	memcpy(bufp, men->data, men->datasz);
+	bufp += men->datasz;
+
+	bufp = (uint8_t*) roundup((unsigned long)bufp, 4);
+	return bufp;
 }
 
 static uint8_t *kdump_core_write_cpu_note(const struct mrdump_control_block *mrdump_cb, int cpu, struct elf64_phdr *nhdr, uint8_t *bufp)
 {
-    struct memelfnote notes;
-    struct elf_prstatus64 prstatus;
-    char cpustr[16];
+	struct memelfnote notes;
+	struct elf_prstatus64 prstatus;
+	char cpustr[16];
 
-    memset(&prstatus, 0, sizeof(struct elf_prstatus64));
+	memset(&prstatus, 0, sizeof(struct elf_prstatus64));
 
-    snprintf(cpustr, sizeof(cpustr), "CPU%d", cpu);
-    /* set up the process status */
-    notes.name = cpustr;
-    notes.type = NT_PRSTATUS;
-    notes.datasz = sizeof(struct elf_prstatus64);
-    notes.data = &prstatus;
-    
-    prstatus.pr_pid = cpu + 1;
-    memcpy(&prstatus.pr_reg, &mrdump_cb->crash_record.cpu_regs[cpu].arm64_regs, sizeof(elf_gregset_t));
-                
-    nhdr->p_filesz += notesize(&notes);
-    return storenote(&notes, bufp);
+	snprintf(cpustr, sizeof(cpustr), "CPU%d", cpu);
+	/* set up the process status */
+	notes.name = cpustr;
+	notes.type = NT_PRSTATUS;
+	notes.datasz = sizeof(struct elf_prstatus64);
+	notes.data = &prstatus;
+
+	prstatus.pr_pid = cpu + 1;
+	memcpy(&prstatus.pr_reg, &mrdump_cb->crash_record.cpu_regs[cpu].arm64_regs, sizeof(elf_gregset_t));
+
+	nhdr->p_filesz += notesize(&notes);
+	return storenote(&notes, bufp);
 }
 
 static uint8_t *kdump_core_write_machdesc(const struct mrdump_control_block *mrdump_cb, struct elf64_phdr *nhdr, uint8_t *bufp)
 {
-    struct memelfnote notes;
-    struct elf_mrdump_machdesc machdesc;
-    const struct mrdump_machdesc *kparams = &mrdump_cb->machdesc;
+	struct memelfnote notes;
+	struct elf_mrdump_machdesc machdesc;
+	const struct mrdump_machdesc *kparams = &mrdump_cb->machdesc;
 
-    memset(&machdesc, 0, sizeof(struct elf_mrdump_machdesc));
+	memset(&machdesc, 0, sizeof(struct elf_mrdump_machdesc));
 
-    notes.name = "MACHDESC";
-    notes.type = NT_MRDUMP_MACHDESC;
-    notes.datasz = sizeof(struct elf_mrdump_machdesc);
-    notes.data = &machdesc;
+	notes.name = "MRDUMP";
+	notes.type = NT_MRDUMP_MACHDESC;
+	notes.datasz = sizeof(struct elf_mrdump_machdesc);
+	notes.data = &machdesc;
 
-    machdesc.flags = MRDUMP_TYPE_FULL_MEMORY;
-    machdesc.phys_offset = (uint32_t)kparams->phys_offset;
-    machdesc.page_offset = (uint32_t)kparams->page_offset;
-    machdesc.high_memory = (uint32_t)kparams->high_memory;
-    machdesc.modules_start = (uint32_t)kparams->modules_start;
-    machdesc.modules_end = (uint32_t)kparams->modules_end;
-    machdesc.vmalloc_start = (uint32_t)kparams->vmalloc_start;
-    machdesc.vmalloc_end = (uint32_t)kparams->vmalloc_end;
+	machdesc.flags = MRDUMP_TYPE_FULL_MEMORY;
+	machdesc.nr_cpus = kparams->nr_cpus;
+	machdesc.phys_offset = kparams->phys_offset;
+	machdesc.page_offset = kparams->page_offset;
+	machdesc.high_memory = kparams->high_memory;
+	machdesc.modules_start = kparams->modules_start;
+	machdesc.modules_end = kparams->modules_end;
+	machdesc.vmalloc_start = kparams->vmalloc_start;
+	machdesc.vmalloc_end = kparams->vmalloc_end;
+	machdesc.master_page_table = kparams->master_page_table;
 
-    nhdr->p_filesz += notesize(&notes);
-    return storenote(&notes, bufp);
+	nhdr->p_filesz += notesize(&notes);
+	return storenote(&notes, bufp);
 }
 
 void *kdump_core64_header_init(const struct mrdump_control_block *mrdump_cb, uint64_t kmem_address, uint64_t kmem_size)
@@ -124,22 +156,22 @@ void *kdump_core64_header_init(const struct mrdump_control_block *mrdump_cb, uin
 	bufp += sizeof(struct elf64_phdr);
 	offset += sizeof(struct elf64_phdr);
 
-        uint32_t low_memory_size = kparams->high_memory - kparams->page_offset;
-        if (low_memory_size > kmem_size) {
-            low_memory_size = kmem_size;
-        }
-	phdr->p_type	= PT_LOAD;
-	phdr->p_flags	= PF_R|PF_W|PF_X;
-	phdr->p_offset	= KDUMP_CORE_HEADER_SIZE;
-	phdr->p_vaddr	= kparams->page_offset;
-	phdr->p_paddr	= kmem_address;
-	phdr->p_filesz	= kmem_size;
-	phdr->p_memsz	= low_memory_size;
-	phdr->p_align	= 0;
+	uint64_t low_memory_size = kparams->high_memory - kparams->page_offset;
+	if (low_memory_size > kmem_size) {
+		low_memory_size = kmem_size;
+	}
+	phdr->p_type    = PT_LOAD;
+	phdr->p_flags   = PF_R|PF_W|PF_X;
+	phdr->p_offset  = KDUMP_CORE_HEADER_SIZE;
+	phdr->p_vaddr   = kparams->page_offset;
+	phdr->p_paddr   = kmem_address;
+	phdr->p_filesz  = kmem_size;
+	phdr->p_memsz   = low_memory_size;
+	phdr->p_align   = 0;
 
 	nhdr->p_offset = offset;
 
-	struct elf_prpsinfo64 prpsinfo;	/* NT_PRPSINFO */
+	struct elf_prpsinfo64 prpsinfo; /* NT_PRPSINFO */
 	struct memelfnote notes;
 	/* set up the process info */
 	notes.name = CORE_STR;
@@ -160,15 +192,14 @@ void *kdump_core64_header_init(const struct mrdump_control_block *mrdump_cb, uin
 
 	bufp = kdump_core_write_machdesc(mrdump_cb, nhdr, bufp);
 
-        /* Store pre-cpu backtrace */
-        bufp = kdump_core_write_cpu_note(mrdump_cb, mrdump_cb->crash_record.fault_cpu, nhdr, bufp);
+	/* Store pre-cpu backtrace */
+	bufp = kdump_core_write_cpu_note(mrdump_cb, mrdump_cb->crash_record.fault_cpu, nhdr, bufp);
 	for (unsigned int cpu = 0; cpu < kparams->nr_cpus; cpu++) {
-            if (cpu != mrdump_cb->crash_record.fault_cpu) {
-                bufp = kdump_core_write_cpu_note(mrdump_cb, cpu, nhdr, bufp);
-            }
-        }
+		if (cpu != mrdump_cb->crash_record.fault_cpu) {
+			bufp = kdump_core_write_cpu_note(mrdump_cb, cpu, nhdr, bufp);
+		}
+	}
 	// voprintf_debug("%s cpu %d header size %d\n", __FUNCTION__, kparams->nr_cpus, bufp - oldbufp);
-    
+
 	return oldbufp;
 }
-

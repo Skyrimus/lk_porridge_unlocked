@@ -1,4 +1,3 @@
-#ifdef MTK_EFUSE_WRITER_SUPPORT
 #include <stdlib.h>
 #include <debug.h>
 #include <video.h>
@@ -18,15 +17,15 @@ static int mboot_efuse_load_misc(unsigned char *misc_addr, unsigned int size)
 {
     int ret;
 
-	printf("[%s]: size is %u\n", __func__, size);
-	printf("[%s]: misc_addr is 0x%x\n", __func__, misc_addr);
+	dprintf(SPEW,"[%s]: size is %u\n", __func__, size);
+	dprintf(SPEW,"[%s]: misc_addr is 0x%x\n", __func__, misc_addr);
 
     ret = mboot_recovery_load_raw_part(EFUSE_PART_NAME, (unsigned long *) misc_addr, size);
 
     return ret;
 }
-
-void mt_efuse_get(void)
+#ifdef MTK_EFUSE_WRITER_SUPPORT
+unsigned int mt_efuse_get(void)
 {
     unsigned char *data;
     unsigned char efuse = EFUSE_NONE;
@@ -83,7 +82,11 @@ void mt_efuse_get(void)
 fail:
     if (data)
         free(data);
-    return ;
+    return (unsigned int)efuse;
 }
-
+#else
+unsigned int mt_efuse_get(void)
+{
+    return 0;
+}
 #endif

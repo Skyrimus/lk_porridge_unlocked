@@ -39,7 +39,7 @@
 #include <platform/mt8193.h>
 
 
-#define MT8193_CHIP_ADDR                0x1D
+#define MT8193_CHIP_ADDR                0x3A
 
 #if 0
 

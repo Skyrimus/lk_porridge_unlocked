@@ -1,12 +1,18 @@
 # comment out or override if you want to see the full output of each command
 NOECHO ?= @
 
+ifeq ($(HOST_OS),darwin)
+MKIMAGE := ./scripts/mkimage.darwin
+else
+MKIMAGE := ./scripts/mkimage
+endif
+
 $(OUTBIN): $(OUTELF)
 	@echo generating image: $@
 	$(NOECHO)$(SIZE) $<
 	$(NOCOPY)$(OBJCOPY) -O binary $< $@
 	$(NOECHO)cp -f $@ $(BUILDDIR)/lk-no-mtk-header.bin
-	./scripts/mkimage $@ LK > $(BUILDDIR)/lk_header.bin
+	$(MKIMAGE) $@ img_hdr_lk.cfg > $(BUILDDIR)/lk_header.bin
 	$(NOECHO)mv $(BUILDDIR)/lk_header.bin $@
 
 ifeq ($(ENABLE_TRUSTZONE), 1)
@@ -39,8 +45,14 @@ ifeq ($(BUILD_SEC_LIB),yes)
 	@ar cq $(LK_TOP_DIR)/app/mt_boot/lib/libsplat.a $(SEC_PLAT_OBJS)
 	@ar cq $(LK_TOP_DIR)/app/mt_boot/lib/libdevinfo.a $(DEVINFO_OBJS)
 endif
+ifeq ($(BUILD_HW_CRYPTO_LIB),yes)
+	@echo delete old hw crypto library
+	@rm -rf $(LK_TOP_DIR)/app/mt_boot/lib/libhw_crypto.a
+	@echo linking hw crypto library
+	@ar cq $(LK_TOP_DIR)/app/mt_boot/lib/libhw_crypto.a $(HW_CRYPTO_OBJS)
+endif
 	@echo linking $@
-	$(NOECHO)$(LD) $(LDFLAGS) -T $(LINKER_SCRIPT) $(ALLOBJS) $(LIBGCC) $(LIBSEC) $(LIBSEC_PLAT) -o $@
+	$(NOECHO)$(LD) $(LDFLAGS) -T $(LINKER_SCRIPT) $(ALLOBJS) $(LIBGCC) $(LIBSEC) $(LIBSEC_PLAT) $(LIBHW_CRYPTO) -o $@
 endif
 
 $(OUTELF).sym: $(OUTELF)

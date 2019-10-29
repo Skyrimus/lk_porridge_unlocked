@@ -28,7 +28,9 @@ int g_ncp1854_log_en=0;
   *********************************************************/
 #define NCP1854_REG_NUM 18
 
-#ifndef NCP1854_BUSNUM
+#ifdef I2C_SWITCHING_CHARGER_CHANNEL
+#define NCP1854_BUSNUM I2C_SWITCHING_CHARGER_CHANNEL
+#else
 #define NCP1854_BUSNUM 3
 #endif  
 
@@ -537,8 +539,12 @@ void ncp1854_hw_init()
 
     kal_uint32 ncp1854_status;
     ncp1854_status = ncp1854_get_chip_status();
-
-	ncp1854_set_fctry_mode(0x0);
+    /* if you want disable factory mode,the FTRY pin and FCTRY_MOD_REG need different */
+#ifdef DISABLE_NCP1854_FACTORY_MODE
+    ncp1854_set_fctry_mode(0x0);
+#else
+    ncp1854_set_fctry_mode(0x1);
+#endif
     ncp1854_set_otg_en(0x0);
     ncp1854_set_trans_en(0);
     ncp1854_set_tj_warn_opt(0x0);

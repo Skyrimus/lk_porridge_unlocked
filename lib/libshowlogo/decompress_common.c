@@ -32,9 +32,9 @@
  * have been modified by MediaTek Inc. All revisions are subject to any receiver's
  * applicable license agreements with MediaTek Inc.
  */
- 
- 
- 
+
+
+
 #include <stdio.h>
 #include <string.h>
 #include "show_logo_log.h"
@@ -99,5 +99,3 @@ int decompress_logo(void *in, void *out, int inlen, int outlen)
     //return ret == Z_STREAM_END ? Z_OK : Z_DATA_ERROR;
     return have;
 }
-
-

@@ -48,11 +48,11 @@ extern "C" {
 
 #define RGB565_TO_ABGR8888(x)   \
     ((((x) &   0x1F) << 19) |   \
-     (((x) &  0x7E0) << 10) |   \
-     (((x) & 0xF800) << 3)  |   \
+     (((x) &  0x7E0) <<  5) |   \
+     (((x) & 0xF800) >>  8) |   \
      (0xFF << 24)) // opaque
 
-#define ARGB8888_TO_ABGR8888(x)  \
+#define ARGB8888_TO_ABGR8888(x) \
     ((((x) &   0xFF) << 16)  |  \
       ((x) & 0xFF00)         |  \
      (((x) & 0xFF0000) >> 16)|  \
@@ -70,7 +70,7 @@ extern "C" {
 
 #define ALIGN_TO(x, n)  \
     (((x) + ((n) - 1)) & ~((n) - 1))
-    
+
 
 // define the rectangle parameters
 typedef struct {
@@ -80,20 +80,22 @@ typedef struct {
 // dedfine the LCM SCREEM parameters
 typedef struct {
      int         width;
-     int         height;                        
+     int         height;
      int         bits_per_pixel;
      int         rotation;                  // phical screen rotation:0 , 90, 180, 270
      int         needAllign;                // if need adjust the width or height with 32: no need  (0), need (1)
-     int         allignWidth; 
+     int         allignWidth;
      int         need180Adjust;             // if need adjust the drawing logo for 180 roration: no need  (0), need (1)
      int         fb_size;
      int         fill_dst_bits;
+     int         red_offset;                // if red_offset is 0: logo use format BGR565 or ABGR8888,  red_offset is 11/16: RGB565, ARGB8888
+     int         blue_offset;               // if blue_offset is 11/16: logo use format BGR565 or ABGR8888,  blue_offset is 0: RGB565, ARGB8888
 } LCM_SCREEN_T;
 
 /* internal use function */
 
 int  check_rect_valid(RECT_REGION_T rect);
-void fill_point_buffer(unsigned int *fill_addr, unsigned int src_color, unsigned int bits_per_pixel, unsigned int bits);
+void fill_point_buffer(unsigned int *fill_addr, unsigned int src_color, LCM_SCREEN_T phical_screen, unsigned int bits);
 void fill_rect_with_content_by_32bit_argb8888(unsigned int *fill_addr, RECT_REGION_T rect, unsigned int *src_addr, LCM_SCREEN_T phical_screen, unsigned int bits);
 void fill_rect_with_content_by_32bit_rgb565(unsigned int *fill_addr, RECT_REGION_T rect, unsigned short *src_addr, LCM_SCREEN_T phical_screen, unsigned int bits);
 void fill_rect_with_color_by_32bit(unsigned int *fill_addr, RECT_REGION_T rect, unsigned int src_color, LCM_SCREEN_T phical_screen);
@@ -105,7 +107,7 @@ void fill_rect_with_color_by_16bit(unsigned short *fill_addr, RECT_REGION_T rect
 /* public interface */
 
 /*
- * Draw a rectangle with logo content 
+ * Draw a rectangle with logo content
  *
  * @parameter
  *
@@ -114,7 +116,7 @@ void fill_rect_with_content(void *fill_addr, RECT_REGION_T rect, void *src_addr,
 
 
 /*
- * Draw a rectangle with spcial color 
+ * Draw a rectangle with spcial color
  *
  * @parameter
  *

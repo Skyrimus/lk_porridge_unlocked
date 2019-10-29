@@ -176,10 +176,55 @@ WFI_LOOP:
 
 .text
 FUNCTION(jumparch64_smc)
+        mov r4, r3
 	mov r3, r2
 	mov r2, r1
 	mov r1, r0
-	ldr r0, =0x82000200  /*please check MTK_SIP_KERNEL_TMP_AARCH32 in  vendor/arm/atf/include/bl31/services/sip_svc.h*/ 
+	ldr r0, =0x82000200  /*r0: ATF Function ID, please check MTK_SIP_KERNEL_BOOT_AARCH32 in  vendor/arm/atf/include/bl31/services/sip_svc.h*/ 
 	smc #0
 	b   .
+
+.text
+FUNCTION(dapc_smc)
+	mov r3, r2
+	mov r2, r1
+	mov r1, r0
+	ldr r0, =0x82000101  /*please check MTK_SIP_LK_DAPC_INIT_AARCH32 in  vendor/arm/atf-1.0/include/bl31/services/sip_svc.h*/ 
+	smc #0
+	bx lr
+
+.text
+FUNCTION(md_reg_write_smc)
+	mov r4, r3
+	mov r3, r2
+	mov r2, r1
+	mov r1, r0
+	ldr r0, =0x82000102  /*please check MTK_SIP_LK_LTE_REG_WRITE_TH_AARCH32 in  vendor/arm/atf-1.0/include/bl31/services/sip_svc.h*/ 
+	smc #0
+	bx lr
+
+.text
+FUNCTION(rpmb_init)
+    ldr r0, =0x82000103  /*please check MTK_SIP_LK_RPMB_INIT_AARCH32 in vendor/arm/atf-1.0/include/bl31/services/sip_svc.h*/ 
+    smc #0
+    bx lr
+
+.text
+FUNCTION(rpmb_uninit)
+    ldr r0, =0x82000104  /*please check MTK_SIP_LK_RPMB_UNINIT_AARCH32 in vendor/arm/atf-1.0/include/bl31/services/sip_svc.h*/ 
+    smc #0
+    bx lr
+
+.text
+FUNCTION(rpmb_hmac)
+    mov r2, r1
+    mov r1, r0
+    ldr r0, =0x82000105  /*please check MTK_SIP_LK_RPMB_HMAC_AARCH32 in  vendor/arm/atf-1.0/include/bl31/services/sip_svc.h*/ 
+    smc #0
+    bx lr
+
+.text
+FUNCTION(mt_secure_call)
+        smc #0
+        bx lr
 

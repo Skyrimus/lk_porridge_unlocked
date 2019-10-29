@@ -162,12 +162,12 @@ bool rtc_boot_check(bool can_alarm_boot)
 				}
 				return true;
 			} else if (now_time < time) {	/* set power-on alarm */
-				RTC_Write(RTC_AL_YEA, (RTC_Read(RTC_AL_YEA) & (~RTC_AL_YEA_MASK)) | ((yea - RTC_MIN_YEAR) & RTC_AL_YEA_MASK));
+				RTC_Write(RTC_AL_YEA, yea - RTC_MIN_YEAR);
 				RTC_Write(RTC_AL_MTH, (RTC_Read(RTC_AL_MTH)&RTC_NEW_SPARE3)|mth);
 				RTC_Write(RTC_AL_DOM, (RTC_Read(RTC_AL_DOM)&RTC_NEW_SPARE1)|dom);
 				RTC_Write(RTC_AL_HOU, (RTC_Read(RTC_AL_HOU)&RTC_NEW_SPARE_FG_MASK)|hou);
 				RTC_Write(RTC_AL_MIN, min);
-				RTC_Write(RTC_AL_SEC,  RTC_Read(RTC_AL_SEC) & (~RTC_AL_SEC_MASK) | (sec & RTC_AL_SEC_MASK));
+				RTC_Write(RTC_AL_SEC, sec);
 				RTC_Write(RTC_AL_MASK, RTC_AL_MASK_DOW);	/* mask DOW */
 				rtc_write_trigger();
 				irqen = RTC_Read(RTC_IRQ_EN) | RTC_IRQ_EN_ONESHOT_AL;

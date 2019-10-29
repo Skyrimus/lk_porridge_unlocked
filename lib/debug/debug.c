@@ -33,12 +33,17 @@
 #include <kernel/thread.h>
 #include <kernel/timer.h>
 
+#ifndef PRINT_BUFFER_LEN
+#define PRINT_BUFFER_LEN 1024
+#endif
+static char buf[PRINT_BUFFER_LEN];
+
 void spin(uint32_t usecs)
 {
 	bigtime_t start = current_time_hires();
 
 	while ((current_time_hires() - start) < usecs)
-		;	
+		;
 }
 
 void halt(void)
@@ -70,7 +75,7 @@ int _dputs(const char *str)
 
 int _dprintf(const char *fmt, ...)
 {
-	char buf[256];
+	//char buf[256];
 	char ts_buf[13];
 	int err;
 
@@ -89,7 +94,7 @@ int _dprintf(const char *fmt, ...)
 
 int _dvprintf(const char *fmt, va_list ap)
 {
-	char buf[256];
+	//char buf[256];
 	int err;
 
 	err = vsnprintf(buf, sizeof(buf), fmt, ap);
@@ -118,7 +123,7 @@ void hexdump(const void *ptr, size_t len)
 		}
 		printf("|\n");
 		address += 16;
-	}	
+	}
 }
 
 void hexdump8(const void *ptr, size_t len)
@@ -134,7 +139,7 @@ void hexdump8(const void *ptr, size_t len)
 		}
 		printf("\n");
 		address += 16;
-	}	
+	}
 }
 
 #ifdef WITH_LIB_CONSOLE
@@ -212,7 +217,7 @@ static int cmd_display_mem(int argc, const cmd_args *argv)
 			printf("\n");
 			count = 0;
 		}
-	}	
+	}
 
 	if (count != 0)
 		printf("\n");
@@ -313,7 +318,7 @@ static int cmd_copy_mem(int argc, const cmd_args *argv)
 		printf("%s <source address> <target address> <len>\n", argv[0].str);
 		return -1;
 	}
-	
+
 	addr_t source = argv[1].u;
 	addr_t target = argv[2].u;
 	size_t len = argv[3].u;
@@ -357,4 +362,4 @@ static int cmd_memtest(int argc, const cmd_args *argv)
 }
 
 #endif
- 
+

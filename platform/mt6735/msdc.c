@@ -1342,7 +1342,7 @@ void msdc_set_smpl(struct mmc_host *host, u8 HS400, u8 mode, u8 type)
             }
             else if (mode == MSDC_SMPL_SEPERATE) {
                 MSDC_SET_FIELD(MSDC_IOCON, MSDC_IOCON_R_D_SMPL_SEL, 1);
-                for(i=0; i<8; i++);
+		for(i=0; i<8; i++)
                 {
                     MSDC_SET_FIELD(MSDC_IOCON, (MSDC_IOCON_R_D0SPL << i), read_data_edge[i]);
                 }
@@ -1363,7 +1363,7 @@ void msdc_set_smpl(struct mmc_host *host, u8 HS400, u8 mode, u8 type)
             }
             else if (mode == MSDC_SMPL_SEPERATE) {
                 MSDC_SET_FIELD(MSDC_IOCON, MSDC_IOCON_W_D_SMPL_SEL, 1);
-                for(i=0; i<4; i++);
+		for(i=0; i<4; i++)
                 {
                     MSDC_SET_FIELD(MSDC_IOCON, (MSDC_IOCON_W_D0SPL << i), write_data_edge[i]);//dat0~4 is for SDIO card.
                 }
@@ -4176,10 +4176,6 @@ int msdc_init(int id, struct mmc_host *host, int clksrc, int mode)
 
     /* write crc timeout detection */
     MSDC_SET_FIELD(MSDC_PATCH_BIT0, 1 << 30, 1);
-
-#ifdef MACH_TYPE_MT6753
-    MSDC_SET_FIELD(MSDC_PAD_TUNE0,MSDC_PAD_TUNE0_CLKTXDLY, 0x14);
-#endif
 
 #if defined(MMC_MSDC_DRV_CTP)
   #if (MSDC_USE_FORCE_FLUSH || MSDC_USE_RELIABLE_WRITE || MSDC_USE_DATA_TAG || MSDC_USE_PACKED_CMD)

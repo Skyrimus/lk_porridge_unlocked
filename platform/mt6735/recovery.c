@@ -1,25 +1,33 @@
-/*
- * (C) Copyright 2008
- * MediaTek <www.mediatek.com>
- *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
+/* Copyright Statement:
+*
+* This software/firmware and related documentation ("MediaTek Software") are
+* protected under relevant copyright laws. The information contained herein
+* is confidential and proprietary to MediaTek Inc. and/or its licensors.
+* Without the prior written permission of MediaTek inc. and/or its licensors,
+* any reproduction, modification, use or disclosure of MediaTek Software,
+* and information contained herein, in whole or in part, shall be strictly prohibited.
+*/
+/* MediaTek Inc. (C) 2015. All rights reserved.
+*
+* BY OPENING THIS FILE, RECEIVER HEREBY UNEQUIVOCALLY ACKNOWLEDGES AND AGREES
+* THAT THE SOFTWARE/FIRMWARE AND ITS DOCUMENTATIONS ("MEDIATEK SOFTWARE")
+* RECEIVED FROM MEDIATEK AND/OR ITS REPRESENTATIVES ARE PROVIDED TO RECEIVER ON
+* AN "AS-IS" BASIS ONLY. MEDIATEK EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES,
+* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT.
+* NEITHER DOES MEDIATEK PROVIDE ANY WARRANTY WHATSOEVER WITH RESPECT TO THE
+* SOFTWARE OF ANY THIRD PARTY WHICH MAY BE USED BY, INCORPORATED IN, OR
+* SUPPLIED WITH THE MEDIATEK SOFTWARE, AND RECEIVER AGREES TO LOOK ONLY TO SUCH
+* THIRD PARTY FOR ANY WARRANTY CLAIM RELATING THERETO. RECEIVER EXPRESSLY ACKNOWLEDGES
+* THAT IT IS RECEIVER'S SOLE RESPONSIBILITY TO OBTAIN FROM ANY THIRD PARTY ALL PROPER LICENSES
+* CONTAINED IN MEDIATEK SOFTWARE. MEDIATEK SHALL ALSO NOT BE RESPONSIBLE FOR ANY MEDIATEK
+* SOFTWARE RELEASES MADE TO RECEIVER'S SPECIFICATION OR TO CONFORM TO A PARTICULAR
+* STANDARD OR OPEN FORUM. RECEIVER'S SOLE AND EXCLUSIVE REMEDY AND MEDIATEK'S ENTIRE AND
+* CUMULATIVE LIABILITY WITH RESPECT TO THE MEDIATEK SOFTWARE RELEASED HEREUNDER WILL BE,
+* AT MEDIATEK'S OPTION, TO REVISE OR REPLACE THE MEDIATEK SOFTWARE AT ISSUE,
+* OR REFUND ANY SOFTWARE LICENSE FEES OR SERVICE CHARGE PAID BY RECEIVER TO
+* MEDIATEK FOR SUCH MEDIATEK SOFTWARE AT ISSUE.
+*/
 
 #include <debug.h>
 #include <err.h>
@@ -43,46 +51,44 @@ extern int mboot_recovery_load_misc(unsigned char *misc_addr, unsigned int size)
 
 
 #ifdef LOG_VERBOSE
-static void dump_data(const char *data, int len) {
-    int pos;
-    for (pos = 0; pos < len; ) {
-       dprintf(INFO, "%05x: %02x", pos, data[pos]);
-        for (++pos; pos < len && (pos % 24) != 0; ++pos) {
-           dprintf(INFO, " %02x", data[pos]);
-        }
-       dprintf(INFO, "\n");
-    }
+static void dump_data(const char *data, int len)
+{
+	int pos;
+	for (pos = 0; pos < len; ) {
+		dprintf(INFO, "%05x: %02x", pos, data[pos]);
+		for (++pos; pos < len && (pos % 24) != 0; ++pos) {
+			dprintf(INFO, " %02x", data[pos]);
+		}
+		dprintf(INFO, "\n");
+	}
 }
 #endif
 
 #if 0
 BOOL recovery_check_key_trigger(void)
 {
-    //wait
-    ulong begin = get_timer(0);
-   dprintf(INFO, "\n%s Check recovery boot\n",MODULE_NAME);
-   dprintf(INFO, "%s Wait 50ms for special keys\n",MODULE_NAME);
+	//wait
+	ulong begin = get_timer(0);
+	dprintf(INFO, "\n%s Check recovery boot\n",MODULE_NAME);
+	dprintf(INFO, "%s Wait 50ms for special keys\n",MODULE_NAME);
 
-    if(mtk_detect_pmic_just_rst())
-    {
-        return false;
-    }
+	if (mtk_detect_pmic_just_rst()) {
+		return false;
+	}
 
 #ifdef MT65XX_RECOVERY_KEY
-    while(get_timer(begin)<50)
-    {
-        if(mtk_detect_key(MT65XX_RECOVERY_KEY))
-        {
-           dprintf(CRITICAL, "%s Detect cal key\n",MODULE_NAME);
-           dprintf(CRITICAL, "%s Enable recovery mode\n",MODULE_NAME);
-            g_boot_mode = RECOVERY_BOOT;
-            //video_printf("%s : detect recovery mode !\n",MODULE_NAME);
-            return TRUE;
-        }
-    }
+	while (get_timer(begin)<50) {
+		if (mtk_detect_key(MT65XX_RECOVERY_KEY)) {
+			dprintf(CRITICAL, "%s Detect cal key\n",MODULE_NAME);
+			dprintf(CRITICAL, "%s Enable recovery mode\n",MODULE_NAME);
+			g_boot_mode = RECOVERY_BOOT;
+			//video_printf("%s : detect recovery mode !\n",MODULE_NAME);
+			return TRUE;
+		}
+	}
 #endif
 
-    return FALSE;
+	return FALSE;
 }
 #endif
 
@@ -92,51 +98,49 @@ extern flashdev_info devinfo;
 
 BOOL recovery_check_command_trigger(void)
 {
-    struct misc_message misc_msg;
-    struct misc_message *pmisc_msg = &misc_msg;
+	struct misc_message misc_msg;
+	struct misc_message *pmisc_msg = &misc_msg;
 #ifndef MTK_EMMC_SUPPORT
-    const unsigned int size = (devinfo.pagesize) * MISC_PAGES;
+	const unsigned int size = (devinfo.pagesize) * MISC_PAGES;
 #else
-    const unsigned int size = 2048 * MISC_PAGES;
+	const unsigned int size = 2048 * MISC_PAGES;
 #endif
-    unsigned char *pdata;
-    int ret;
+	unsigned char *pdata;
+	int ret;
 
-    pdata = (uchar*)malloc(sizeof(uchar)*size);
+	pdata = (uchar*)malloc(sizeof(uchar)*size);
 
-    ret = mboot_recovery_load_misc(pdata, size);
+	ret = mboot_recovery_load_misc(pdata, size);
 
-    if (ret < 0)
-    {
-        return FALSE;
-    }
+	if (ret < 0) {
+		return FALSE;
+	}
 
 #ifdef LOG_VERBOSE
-   dprintf(INFO, "\n--- get_bootloader_message ---\n");
-    dump_data(pdata, size);
-   dprintf(INFO, "\n");
+	dprintf(INFO, "\n--- get_bootloader_message ---\n");
+	dump_data(pdata, size);
+	dprintf(INFO, "\n");
 #endif
 
 #ifndef MTK_EMMC_SUPPORT //wschen 2012-01-12 eMMC did not need 2048 byte offset
-    memcpy(pmisc_msg, &pdata[(devinfo.pagesize) * MISC_COMMAND_PAGE], sizeof(misc_msg));
+	memcpy(pmisc_msg, &pdata[(devinfo.pagesize) * MISC_COMMAND_PAGE], sizeof(misc_msg));
 #else
-    memcpy(pmisc_msg, pdata, sizeof(misc_msg));
+	memcpy(pmisc_msg, pdata, sizeof(misc_msg));
 #endif
 #ifdef LOG_VERBOSE
-   dprintf(INFO, "Boot command: %.*s\n", sizeof(misc_msg.command), misc_msg.command);
-   dprintf(INFO, "Boot status: %.*s\n", sizeof(misc_msg.status), misc_msg.status);
-   dprintf(INFO, "Boot message\n\"%.20s\"\n", misc_msg.recovery);
+	dprintf(INFO, "Boot command: %.*s\n", sizeof(misc_msg.command), misc_msg.command);
+	dprintf(INFO, "Boot status: %.*s\n", sizeof(misc_msg.status), misc_msg.status);
+	dprintf(INFO, "Boot message\n\"%.20s\"\n", misc_msg.recovery);
 #endif
 
-    free(pdata);
+	free(pdata);
 
-    if(strcmp(misc_msg.command, "boot-recovery")==0)
-    {
-        g_boot_mode = RECOVERY_BOOT;
-        return TRUE;
-    }
+	if (strcmp(misc_msg.command, "boot-recovery")==0) {
+		g_boot_mode = RECOVERY_BOOT;
+		return TRUE;
+	}
 
-    return FALSE;
+	return FALSE;
 }
 
 /**********************************************************
@@ -145,26 +149,24 @@ BOOL recovery_check_command_trigger(void)
  * Description: check recovery mode
  *
  * Notice: the recovery bits of RTC PDN1 are set as 0x10 only if
- *			(1) user trigger factory reset
+ *          (1) user trigger factory reset
  *
  **********************************************************/
 #if 0
 BOOL recovery_detection(void)
 {
-    if(Check_RTC_Recovery_Mode())
-    {
-        g_boot_mode = RECOVERY_BOOT;
-        return TRUE;
-    }
+	if (Check_RTC_Recovery_Mode()) {
+		g_boot_mode = RECOVERY_BOOT;
+		return TRUE;
+	}
 
 #if 0
-    if(recovery_check_key_trigger())
-    {
-        return TRUE;
-    }
+	if (recovery_check_key_trigger()) {
+		return TRUE;
+	}
 #endif
 
-    return recovery_check_command_trigger();
+	return recovery_check_command_trigger();
 
 }
 #endif

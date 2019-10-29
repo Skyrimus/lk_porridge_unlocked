@@ -5,68 +5,81 @@
 #include "aee.h"
 #include "kdump.h"
 
-#ifdef CFG_DTB_EARLY_LOADER_SUPPORT
-static unsigned int mrdump_cb_addr(void)
-{
-    int lenp = 0;
-    struct fdt_property *prop = NULL;
-    int offset = fdt_node_offset_by_compatible(g_fdt, 0, "mrdump-reserved-memory");
-    if(offset == 0) {
-        dprintf(CRITICAL,"%s:%d invalide offset=%d\n",__func__,__LINE__,offset);
-        return 0;
-    }
-    else{
-        prop = fdt_get_property(g_fdt, offset, "reg", &lenp);
-        if(!prop){
-            dprintf(CRITICAL,"%s:%d get reg prperty failed\n",__func__,__LINE__);
-            return 0;
-        }
-    }
-    struct mrdump_reserve_args *mrdump_rsv_args = (struct mrdump_reserve_args *)&prop->data;
-
-    dprintf(CRITICAL,"mrdump_rsv_args->lo_addr = %x\n",fdt32_to_cpu(mrdump_rsv_args->lo_addr));
-    return fdt32_to_cpu(mrdump_rsv_args->lo_addr);
-}
-#else
-
-static unsigned int mrdump_cb_addr(void)
-{
-    return MRDUMP_CB_ADDR;
-}
-
+#ifdef MTK_3LEVEL_PAGETABLE
+#include <stdlib.h>
+#include <err.h>
 #endif
 
-static struct mrdump_control_block *mrdump_cb = NULL;
+#define SEARCH_SIZE 33554432
+#define SEARCH_STEP 1024
 
-static void mrdump_query_bootinfo(void)
+#ifdef MTK_3LEVEL_PAGETABLE
+#define MAX_MAP_CNT (SECTION_SIZE/SEARCH_STEP)
+#define mapflags (MMU_MEMORY_TYPE_NORMAL_WRITE_BACK | MMU_MEMORY_AP_P_RW_U_NA)
+static struct mrdump_control_block *mrdump_cb_addr(void)
 {
-    if (mrdump_cb == NULL) {
-        struct mrdump_control_block *bufp = (struct mrdump_control_block *)mrdump_cb_addr();
-        if (bufp == NULL) {
-            voprintf_debug("mrdump_cb is invalid 0x%x\n", (unsigned int *)mrdump_cb);
-            return;
-        }
-        if (memcmp(bufp->sig, MRDUMP_GO_DUMP, 8) == 0) {
-            bufp->sig[0] = 'X';
-        } else {
-            memset(bufp, 0, sizeof(struct mrdump_control_block));
-            memcpy(bufp->sig, MRDUMP_VERSION, 8);
-        }
-        mrdump_cb = bufp;
-        aee_mrdump_flush_cblock(mrdump_cb);
-        voprintf_debug("Boot record found at %p[%02x%02x], cb %p\n", bufp, bufp->sig[0], bufp->sig[1], mrdump_cb);
-    }
+	int i, cnt = 0;
+
+	/* to write sig, use 1-on-1 mapping */
+	uint64_t paddr = DRAM_PHY_ADDR;
+	vaddr_t vaddr = (vaddr_t)paddr;
+
+	for (i = 0; i < SEARCH_SIZE; i += SEARCH_STEP) {
+		if (cnt == 0) {
+			int map_ok = arch_mmu_map(paddr, vaddr, mapflags, SECTION_SIZE);
+			if (map_ok != NO_ERROR) {
+				voprintf_debug("%s: arch_mmu_map error.\n", __func__);
+				return NULL;
+			}
+		}
+
+		struct mrdump_control_block *bufp = (struct mrdump_control_block *)vaddr;
+		if (memcmp(bufp->sig, MRDUMP_GO_DUMP, 8) == 0) {
+			return bufp;
+		}
+
+		cnt++;
+		cnt %= MAX_MAP_CNT;
+		paddr += SEARCH_STEP;
+		vaddr += SEARCH_STEP;
+	}
+	return NULL;
 }
+#else
+static struct mrdump_control_block *mrdump_cb_addr(void)
+{
+	int i;
+	for (i = 0; i < SEARCH_SIZE; i += SEARCH_STEP) {
+		struct mrdump_control_block *bufp = (struct mrdump_control_block *)(DRAM_PHY_ADDR + i);
+		if (memcmp(bufp->sig, MRDUMP_GO_DUMP, 8) == 0) {
+			return bufp;
+		}
+	}
+	return NULL;
+}
+#endif
 
 struct mrdump_control_block *aee_mrdump_get_params(void)
 {
-    mrdump_query_bootinfo();
-    return mrdump_cb;
+	struct mrdump_control_block *bufp = mrdump_cb_addr();
+	if (bufp == NULL) {
+		voprintf_debug("mrdump_cb is NULL\n");
+		return NULL;
+	}
+	if (memcmp(bufp->sig, MRDUMP_GO_DUMP, 8) == 0) {
+		bufp->sig[0] = 'X';
+		aee_mrdump_flush_cblock(bufp);
+		voprintf_debug("Boot record found at %p[%02x%02x]\n", bufp, bufp->sig[0], bufp->sig[1]);
+		return bufp;
+	} else {
+		voprintf_debug("No Boot record found\n");
+		return NULL;
+	}
 }
 
 void aee_mrdump_flush_cblock(struct mrdump_control_block *bufp)
 {
-    if (bufp != NULL) {
-        arch_clean_cache_range((addr_t)bufp, sizeof(struct mrdump_control_block));
-    }
+	if (bufp != NULL) {
+		arch_clean_cache_range((addr_t)bufp, sizeof(struct mrdump_control_block));
+	}
 }

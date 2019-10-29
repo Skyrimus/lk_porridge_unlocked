@@ -122,14 +122,14 @@ int get_uart_port_id(void)
 			return 4;
 		}
 	}
-	return 4;
+	return 2;
 }
 
 int get_meta_port_id(void)
 {
 	unsigned int meta_port;
 
-	meta_port = 0;//= g_boot_arg->meta_uart_port;
+	meta_port = g_boot_arg->meta_uart_port;
 
 	switch(meta_port)
 	{
@@ -202,28 +202,7 @@ void custom_port_in_kernel(BOOTMODE boot_mode, char *command)
 #else
 int get_meta_port_id(void)
 {
-	unsigned int meta_port;
-
-	meta_port = 0;//= g_boot_arg->meta_uart_port;
-
-	switch(meta_port)
-	{
-		case UART1:
-			return 1;
-		case UART2:
-			return 2;
-		case UART3:
-			return 3;
-		case UART4:
-			return 4;
-#ifndef CONFIG_DENALI_2
-		case UART5:
-			return 5;
-#endif
-		default:
-			return 1;
-	}
-
+	// Dummy function case
 	return 1;
 }
 
@@ -235,6 +214,7 @@ void custom_port_in_kernel(BOOTMODE boot_mode, char *command)
 int get_uart_port_id(void)
 {
 	// Dummy function case
+	return 1;
 }
 #endif
 

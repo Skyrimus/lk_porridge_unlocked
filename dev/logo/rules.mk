@@ -8,12 +8,23 @@ ifeq ($(strip $(BOOT_LOGO)),)
   BOOT_LOGO = fwvga
 endif
 
+ifeq ($(strip $(MTK_LK_CAMERA_SUPPORT)), yes)
+  BOOT_LOGO = fhd
+endif
+
 $(info BOOT_LOGO = $(BOOT_LOGO))
 $(info lk/logo/dir=$(LOCAL_DIR),builddir=$(BUILDDIR))
 
+ifeq ($(HOST_OS),darwin)
+BMP_TO_RAW := $(BOOT_LOGO_DIR)/tool/bmp_to_raw.darwin
+ZPIPE := $(BOOT_LOGO_DIR)/tool/zpipe.darwin
+MKIMG := $(LOCAL_DIR)/../../scripts/mkimage.darwin
+else
 BMP_TO_RAW := $(BOOT_LOGO_DIR)/tool/bmp_to_raw
 ZPIPE := $(BOOT_LOGO_DIR)/tool/zpipe
 MKIMG := $(LOCAL_DIR)/../../scripts/mkimage
+endif
+IMG_HDR_CFG := $(LOCAL_DIR)/img_hdr_logo.cfg
 
 EMPTY :=
 UNDER_LINE := _
@@ -36,8 +47,31 @@ endif
 
 BOOT_LOGO_RESOURCE := $(BUILDDIR)/$(BOOT_LOGO_DIR)/$(BOOT_LOGO).raw
 LOGO_IMAGE := $(BUILDDIR)/logo.bin
+
+SUPPORT_PROTOCOL1_RAT_CONFIG = no
+SUPPORT_CARRIEREXPRESS_PACK = no
+ifdef MTK_CARRIEREXPRESS_PACK
+ifneq ($(strip $(MTK_CARRIEREXPRESS_PACK)), no)
+	SUPPORT_CARRIEREXPRESS_PACK = yes
+	RAT_CONFIG = $(strip $(MTK_PROTOCOL1_RAT_CONFIG))
+	ifneq (,$(RAT_CONFIG))
+		ifneq (,$(findstring L,$(RAT_CONFIG)))
+			SUPPORT_PROTOCOL1_RAT_CONFIG = yes
+		endif
+	endif
+endif
+endif
+
+ifeq ($(strip $(SUPPORT_CARRIEREXPRESS_PACK)),yes)
+RESOLUTION := $(word $(COUNT),$(TEMP))
 RESOURCE_OBJ_LIST :=   \
-            $(BOOT_LOGO_DIR)/$(BOOT_LOGO)/$(BOOT_LOGO)_uboot.raw 
+            $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_uboot.raw
+else
+RESOURCE_OBJ_LIST :=   \
+            $(BOOT_LOGO_DIR)/$(BOOT_LOGO)/$(BOOT_LOGO)_uboot.raw
+endif
+
+ifneq ($(strip $(MACH_TYPE)), 2701)
 ifneq ($(strip $(MTK_ALPS_BOX_SUPPORT)), yes)
 RESOURCE_OBJ_LIST +=   \
             $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_battery.raw \
@@ -76,8 +110,15 @@ RESOURCE_OBJ_LIST +=   \
             $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_bat_10_10.raw \
             $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_bat_bg.raw \
             $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_bat_img.raw \
-            $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_bat_100.raw \
+            $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_bat_100.raw
+ifeq ($(strip $(SUPPORT_CARRIEREXPRESS_PACK)),yes)
+RESOURCE_OBJ_LIST +=   \
+            $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_kernel.raw
+else
+RESOURCE_OBJ_LIST +=   \
             $(BOOT_LOGO_DIR)/$(BOOT_LOGO)/$(BOOT_LOGO)_kernel.raw
+endif
+endif
 endif
 
 ifeq ($(strip $(SUPPORT_PUMP_EXPRESS)), yes)
@@ -99,8 +140,8 @@ RESOURCE_OBJ_LIST +=   \
             $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_fast_charging_07.raw \
             $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_fast_charging_08.raw \
             $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_fast_charging_09.raw \
-            $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_fast_charging_percent.raw 
-endif 
+            $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_fast_charging_percent.raw
+endif
 
 ifeq ($(strip $(MTK_WIRELESS_CHARGER_SUPPORT)), yes)
 RESOURCE_OBJ_LIST +=   \
@@ -132,24 +173,64 @@ RESOURCE_OBJ_LIST +=   \
             $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_wireless_bat_90_2.raw \
             $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_wireless_bat_90_3.raw \
             $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_wireless_bat_0.raw \
-            $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_wireless_bat_100.raw 
+            $(BOOT_LOGO_DIR)/$(BASE_LOGO)/$(BASE_LOGO)_wireless_bat_100.raw
 
-endif  
-                                      
+endif
+
+ifeq ($(strip $(SUPPORT_CARRIEREXPRESS_PACK)), yes)
+
+ifeq ($(filter OP01, $(subst _, $(space), $(MTK_REGIONAL_OP_PACK))), OP01)
+ifeq ($(strip $(SUPPORT_PROTOCOL1_RAT_CONFIG)), yes)
+RESOURCE_OBJ_LIST +=   \
+	$(BOOT_LOGO_DIR)/cmcc_lte_$(RESOLUTION)/cmcc_lte_$(RESOLUTION)_uboot.raw \
+	$(BOOT_LOGO_DIR)/cmcc_lte_$(RESOLUTION)/cmcc_lte_$(RESOLUTION)_kernel.raw
+else
+RESOURCE_OBJ_LIST +=   \
+	$(BOOT_LOGO_DIR)/cmcc_$(RESOLUTION)/cmcc_$(RESOLUTION)_uboot.raw \
+	$(BOOT_LOGO_DIR)/cmcc_$(RESOLUTION)/cmcc_$(RESOLUTION)_kernel.raw
+endif
+endif
+
+ifeq ($(filter OP02, $(subst _, $(space), $(MTK_REGIONAL_OP_PACK))), OP02)
+ifeq ($(strip $(SUPPORT_PROTOCOL1_RAT_CONFIG)), yes)
+RESOURCE_OBJ_LIST +=   \
+	$(BOOT_LOGO_DIR)/cu_lte_$(RESOLUTION)/cu_lte_$(RESOLUTION)_uboot.raw \
+	$(BOOT_LOGO_DIR)/cu_lte_$(RESOLUTION)/cu_lte_$(RESOLUTION)_kernel.raw
+else
+RESOURCE_OBJ_LIST +=   \
+	$(BOOT_LOGO_DIR)/cu_$(RESOLUTION)/cu_$(RESOLUTION)_uboot.raw \
+	$(BOOT_LOGO_DIR)/cu_$(RESOLUTION)/cu_$(RESOLUTION)_kernel.raw
+endif
+endif
+
+ifeq ($(filter OP09, $(subst _, $(space), $(MTK_REGIONAL_OP_PACK))), OP09)
+ifeq ($(strip $(SUPPORT_PROTOCOL1_RAT_CONFIG)), yes)
+RESOURCE_OBJ_LIST +=   \
+	$(BOOT_LOGO_DIR)/ct_lte_$(RESOLUTION)/ct_lte_$(RESOLUTION)_uboot.raw \
+	$(BOOT_LOGO_DIR)/ct_lte_$(RESOLUTION)/ct_lte_$(RESOLUTION)_kernel.raw
+else
+RESOURCE_OBJ_LIST +=   \
+	$(BOOT_LOGO_DIR)/ct_$(RESOLUTION)/ct_$(RESOLUTION)_uboot.raw \
+	$(BOOT_LOGO_DIR)/ct_$(RESOLUTION)/ct_$(RESOLUTION)_kernel.raw
+endif
+endif
+
+endif
+
 GENERATED += \
             $(BOOT_LOGO_RESOURCE) \
             $(LOGO_IMAGE) \
             $(addprefix $(BUILDDIR)/,$(RESOURCE_OBJ_LIST))
 
 
-all:: $(LOGO_IMAGE) 
+all:: $(LOGO_IMAGE)
 
 $(LOGO_IMAGE):$(MKIMG) $(BOOT_LOGO_RESOURCE)
 	@echo "MKING $(LOGO_IMAGE) start"
 	@echo $(MKIMG)
 	@echo $(BOOT_LOGO_RESOURCE)
 	@echo $(LOGO_IMAGE)
-	$(MKIMG) $(BOOT_LOGO_RESOURCE) LOGO > $(LOGO_IMAGE)
+	$(MKIMG) $(BOOT_LOGO_RESOURCE) $(IMG_HDR_CFG) > $(LOGO_IMAGE)
 
 $(BOOT_LOGO_RESOURCE): $(addprefix $(BUILDDIR)/,$(RESOURCE_OBJ_LIST)) $(ZPIPE)
 	@$(MKDIR)

@@ -111,16 +111,32 @@ DRVGEN_OUT := $(BUILDDIR)
 PTGEN_OUT := $(BOOTLOADER_OUT)
 
 include project/$(PROJECT).mk
+ifeq ($(MTK_EMMC_SUPPORT), yes)
+ifneq ($(filter MTK_NEW_COMBO_EMMC_SUPPORT, $(strip $(DEFINES))),)
+DEFINES += PART_DEV_API_V2
+#72/82 is old combo, use V1.
+else
+DEFINES += PART_DEV_API_V1
+endif
+else ifeq ($(MTK_UFS_BOOTING), yes)
+DEFINES += PART_DEV_API_V3
+#nand is only used for mt6580 now, 80 also use V2.
+else ifeq ($(MTK_NAND_UBIFS_SUPPORT), yes)
+DEFINES += PART_DEV_API_V2
+else
+DEFINES += PART_DEV_API_V2
+endif
+include make/rat_config.mk
 include target/$(TARGET)/rules.mk
 -include scripts/drvgen/drvgen.mk
 -include scripts/ptgen/$(PLATFORM)/ptgen.mk
+include dev/rules.mk
 include target/$(TARGET)/tools/makefile
 include platform/$(PLATFORM)/rules.mk
 include arch/$(ARCH)/rules.mk
 include platform/rules.mk
 include target/rules.mk
 include kernel/rules.mk
-include dev/rules.mk
 include app/rules.mk
 
 # recursively include any modules in the MODULE variable, leaving a trail of included
@@ -156,6 +172,10 @@ ifeq ($(MTK_EMMC_SUPPORT),yes)
 DEFINES += MTK_EMMC_SUPPORT
 endif
 
+ifeq ($(MTK_UFS_BOOTING),yes)
+DEFINES += MTK_UFS_BOOTING
+endif
+
 ifeq ($(MTK_SECURITY_SW_SUPPORT),yes)
 DEFINES += MTK_SECURITY_SW_SUPPORT
 endif
@@ -182,6 +202,7 @@ SRCDEPS += $(INCLUDEDEPS) make/build.mk arch/$(ARCH)/compile.mk
 SRCDEPS += $(EMIGEN_FILE_LIST)
 SRCDEPS += $(DRVGEN_FILE_LIST)
 SRCDEPS += $(PTGEN_FILE_LIST)
+SRCDEPS += $(LOGO_IMAGE)
 
 # default to no ccache
 CCACHE ?=

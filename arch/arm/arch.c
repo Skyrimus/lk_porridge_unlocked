@@ -44,24 +44,23 @@ void arch_early_init(void)
 {
 	/* turn off the cache */
 	arch_disable_cache(UCACHE);
-#ifdef ENABLE_L2_SHARING 
+#ifdef ENABLE_L2_SHARING
 	config_L2_size();
-#endif 
+#endif
 
 #ifdef MTK_FORCE_CLUSTER1
-    if (mt_get_chip_sw_ver() < CHIP_SW_VER_02)
-    {
-        /* set L2 data latency to 1 */
-        uint32_t tmp;
-        __asm__ volatile("mrc p15, 1, %0, c9, c0, 2" : "=r" (tmp));
-        tmp &= 0xfffc0000;
-        tmp |= 0x9251;
-        isb();
-        dsb();
-        __asm__ volatile("mcr p15, 1, %0, c9, c0, 2" :: "r" (tmp));
-        dsb();
-        isb();
-    }
+	if (mt_get_chip_sw_ver() < CHIP_SW_VER_02) {
+		/* set L2 data latency to 1 */
+		uint32_t tmp;
+		__asm__ volatile("mrc p15, 1, %0, c9, c0, 2" : "=r" (tmp));
+		tmp &= 0xfffc0000;
+		tmp |= 0x9251;
+		isb();
+		dsb();
+		__asm__ volatile("mcr p15, 1, %0, c9, c0, 2" :: "r" (tmp));
+		dsb();
+		isb();
+	}
 #endif
 
 	/* set the vector base to our exception vectors so we dont need to double map at 0 */
@@ -70,12 +69,15 @@ void arch_early_init(void)
 #endif
 
 #if ARM_WITH_MMU
+#ifdef MTK_3LEVEL_PAGETABLE
+	platform_init_mmu();
+#else	//!MTK_3LEVEL_PAGETABLE
 #ifndef MTK_LM_MODE
-	arm_mmu_init();
 	platform_init_mmu_mappings();
 #else
-    platform_init_mmu();
+	platform_init_mmu();
 #endif
+#endif	//MTK_3LEVEL_PAGETABLE
 #endif
 
 	/* turn the cache back on */
@@ -134,9 +136,9 @@ void arch_uninit(void)
 #endif
 
 #if ARM_WITH_CP15
-    /* disable alignment faults */
-    arm_write_cr1(arm_read_cr1() & ~(0x1<<1));
-    dsb();
-#endif    
+	/* disable alignment faults */
+	arm_write_cr1(arm_read_cr1() & ~(0x1<<1));
+	dsb();
+#endif
 }
 

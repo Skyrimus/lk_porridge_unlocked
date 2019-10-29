@@ -79,6 +79,7 @@ unsigned int msdc_ntohl(unsigned int n)
 
 void msdc_get_field(volatile u32 *reg, u32 field, u32 *val)
 {
-    u32 tv = (u32)*reg;
-    *val = ((tv & (field)) >> (msdc_uffs((unsigned int)field) - 1));
+	u32 tv = (u32)*reg;
+	if (msdc_uffs((unsigned int)field) > 0)
+		*val = ((tv & (field)) >> (msdc_uffs((unsigned int)field) - 1));
 }

@@ -1,3 +1,34 @@
+/* Copyright Statement:
+*
+* This software/firmware and related documentation ("MediaTek Software") are
+* protected under relevant copyright laws. The information contained herein
+* is confidential and proprietary to MediaTek Inc. and/or its licensors.
+* Without the prior written permission of MediaTek inc. and/or its licensors,
+* any reproduction, modification, use or disclosure of MediaTek Software,
+* and information contained herein, in whole or in part, shall be strictly prohibited.
+*/
+/* MediaTek Inc. (C) 2015. All rights reserved.
+*
+* BY OPENING THIS FILE, RECEIVER HEREBY UNEQUIVOCALLY ACKNOWLEDGES AND AGREES
+* THAT THE SOFTWARE/FIRMWARE AND ITS DOCUMENTATIONS ("MEDIATEK SOFTWARE")
+* RECEIVED FROM MEDIATEK AND/OR ITS REPRESENTATIVES ARE PROVIDED TO RECEIVER ON
+* AN "AS-IS" BASIS ONLY. MEDIATEK EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES,
+* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT.
+* NEITHER DOES MEDIATEK PROVIDE ANY WARRANTY WHATSOEVER WITH RESPECT TO THE
+* SOFTWARE OF ANY THIRD PARTY WHICH MAY BE USED BY, INCORPORATED IN, OR
+* SUPPLIED WITH THE MEDIATEK SOFTWARE, AND RECEIVER AGREES TO LOOK ONLY TO SUCH
+* THIRD PARTY FOR ANY WARRANTY CLAIM RELATING THERETO. RECEIVER EXPRESSLY ACKNOWLEDGES
+* THAT IT IS RECEIVER'S SOLE RESPONSIBILITY TO OBTAIN FROM ANY THIRD PARTY ALL PROPER LICENSES
+* CONTAINED IN MEDIATEK SOFTWARE. MEDIATEK SHALL ALSO NOT BE RESPONSIBLE FOR ANY MEDIATEK
+* SOFTWARE RELEASES MADE TO RECEIVER'S SPECIFICATION OR TO CONFORM TO A PARTICULAR
+* STANDARD OR OPEN FORUM. RECEIVER'S SOLE AND EXCLUSIVE REMEDY AND MEDIATEK'S ENTIRE AND
+* CUMULATIVE LIABILITY WITH RESPECT TO THE MEDIATEK SOFTWARE RELEASED HEREUNDER WILL BE,
+* AT MEDIATEK'S OPTION, TO REVISE OR REPLACE THE MEDIATEK SOFTWARE AT ISSUE,
+* OR REFUND ANY SOFTWARE LICENSE FEES OR SERVICE CHARGE PAID BY RECEIVER TO
+* MEDIATEK FOR SUCH MEDIATEK SOFTWARE AT ISSUE.
+*/
+
 #ifndef _MT_BOOT_MODE_H_
 #define _MT_BOOT_MODE_H_
 
@@ -108,7 +139,11 @@ typedef struct {
 
 typedef struct {
 	u32 mblock_num;
+#if CFG_MEMORY_RESERVED_SMALL_GRANULARITY
+	mblock_t mblock[128];
+#else
 	mblock_t mblock[4];
+#endif
 } mblock_info_t;
 
 typedef struct {
@@ -146,6 +181,7 @@ typedef struct {
   u8 md_type[4];
   u32  ddr_reserve_enable;
   u32  ddr_reserve_success;
+  u32  ddr_reserve_ready;
   ptp_info_t ptp_volt_info;
   u32  dram_buf_size;
   u32  meta_uart_port;
@@ -154,6 +190,9 @@ typedef struct {
   u32  kernel_boot_opt;
   u32 non_secure_sram_addr;
   u32 non_secure_sram_size;
+  u32 dtb_addr;
+  u32 dtb_size;
+  char pl_version[8];
 } BOOT_ARGUMENT;
 
 
@@ -275,6 +314,7 @@ struct boot_tag_eflag {
 struct boot_tag_ddr_reserve {
     u32 ddr_reserve_enable;
     u32 ddr_reserve_success;
+    u32 ddr_reserve_ready;
 };
 
 /* DRAM BUFF */
@@ -308,6 +348,17 @@ struct boot_tag_sram_info {
         u32 non_secure_sram_size;
 };
 
+#define BOOT_TAG_DTB_INFO      0x88610013
+struct boot_tag_dtb_info {
+        u32 dtb_addr;
+        u32 dtb_size;
+};
+
+#define BOOT_TAG_PL_VERSION      0x88610014
+struct boot_tag_pl_version {
+        char pl_version[8];
+};
+
 struct boot_tag_header {
     u32 size;
     u32 tag;
@@ -333,7 +384,9 @@ struct boot_tag {
         struct boot_tag_vcore_dvfs vcore_dvfs;
         struct boot_tag_boot_opt boot_opt;
         struct boot_tag_sram_info sram_info;
-		struct boot_tag_ptp ptp_volt;
+        struct boot_tag_ptp ptp_volt;
+        struct boot_tag_dtb_info dtb_info;
+        struct boot_tag_pl_version pl_version;
     } u;
 };
 

@@ -60,16 +60,33 @@ ifeq ($(PLATFORM),mt8127)
   ALL_DRVGEN_FILE += inc/cust_eint_ext.h
 endif
 
-ifeq ($(MTK_PLATFORM),mt6735)
+ifeq ($(PLATFORM),mt6735)
   ALL_DRVGEN_FILE += inc/cust_adc.dtsi
   ALL_DRVGEN_FILE += inc/cust_i2c.dtsi
   ALL_DRVGEN_FILE += inc/cust_md1_eint.dtsi
   ALL_DRVGEN_FILE += inc/cust_kpd.dtsi
   ALL_DRVGEN_FILE += inc/cust_clk_buf.dtsi
+  ALL_DRVGEN_FILE += inc/cust_gpio.dtsi
+  ALL_DRVGEN_FILE += inc/cust_adc.dtsi
+  ALL_DRVGEN_FILE += inc/cust_pmic.dtsi
+  ALL_DRVGEN_FILE += inc/mt6735-pinfunc.h
+  ALL_DRVGEN_FILE += inc/pinctrl-mtk-mt6735.h
+endif
+
+ifeq ($(PLATFORM),$(filter $(PLATFORM),mt6797 mt6757 elbrus))
+  PMIC_DRV_C_TARGET = pmic_drv_c
+  PMIC_DRV_H_TARGET = pmic_drv_h
+else
+  PMIC_DRV_C_TARGET = pmic_c
+  PMIC_DRV_H_TARGET = pmic_h
 endif
 
 DRVGEN_FILE_LIST := $(addprefix $(DRVGEN_OUT)/,$(ALL_DRVGEN_FILE))
+ifeq ($(HOST_OS),darwin)
+DRVGEN_TOOL := $(PWD)/scripts/dct/DrvGen.darwin
+else
 DRVGEN_TOOL := $(PWD)/scripts/dct/DrvGen
+endif
 DWS_FILE := $(PWD)/target/$(TARGET)/dct/$(if $(CUSTOM_KERNEL_DCT),$(CUSTOM_KERNEL_DCT),dct)/codegen.dws
 DRVGEN_PREBUILT_PATH := $(PWD)/target/$(TARGET)
 DRVGEN_PREBUILT_CHECK := $(filter-out $(wildcard $(addprefix $(DRVGEN_PREBUILT_PATH)/,$(ALL_DRVGEN_FILE))),$(addprefix $(DRVGEN_PREBUILT_PATH)/,$(ALL_DRVGEN_FILE)))
@@ -108,7 +125,7 @@ $(DRVGEN_OUT)/inc/cust_power.h: $(DRVGEN_TOOL) $(DWS_FILE)
 
 $(DRVGEN_OUT)/inc/pmic_drv.h: $(DRVGEN_TOOL) $(DWS_FILE)
 	@mkdir -p $(dir $@)
-	@$(DRVGEN_TOOL) $(DWS_FILE) $(DRVGEN_OUT_PATH) $(DRVGEN_OUT_PATH) pmic_h
+	@$(DRVGEN_TOOL) $(DWS_FILE) $(DRVGEN_OUT_PATH) $(DRVGEN_OUT_PATH) $(PMIC_DRV_H_TARGET)
 
 $(DRVGEN_OUT)/inc/cust_i2c.h: $(DRVGEN_TOOL) $(DWS_FILE)
 	@mkdir -p $(dir $@)
@@ -136,7 +153,7 @@ $(DRVGEN_OUT)/inc/cust_eint.dtsi: $(DRVGEN_TOOL) $(DWS_FILE)
 
 $(DRVGEN_OUT)/inc/pmic_drv.c: $(DRVGEN_TOOL) $(DWS_FILE)
 	@mkdir -p $(dir $@)
-	@$(DRVGEN_TOOL) $(DWS_FILE) $(DRVGEN_OUT_PATH) $(DRVGEN_OUT_PATH) pmic_c
+	@$(DRVGEN_TOOL) $(DWS_FILE) $(DRVGEN_OUT_PATH) $(DRVGEN_OUT_PATH) $(PMIC_DRV_C_TARGET)
 
 $(DRVGEN_OUT)/inc/cust_i2c.dtsi: $(DRVGEN_TOOL) $(DWS_FILE)
 	@mkdir -p $(dir $@)
@@ -157,6 +174,22 @@ $(DRVGEN_OUT)/inc/cust_kpd.dtsi: $(DRVGEN_TOOL) $(DWS_FILE)
 $(DRVGEN_OUT)/inc/cust_clk_buf.dtsi: $(DRVGEN_TOOL) $(DWS_FILE)
 	@mkdir -p $(dir $@)
 	@$(DRVGEN_TOOL) $(DWS_FILE) $(DRVGEN_OUT_PATH) $(DRVGEN_OUT_PATH) clk_buf_dtsi
+
+$(DRVGEN_OUT)/inc/cust_gpio.dtsi: $(DRVGEN_TOOL) $(DWS_FILE)
+	@mkdir -p $(dir $@)
+	@$(DRVGEN_TOOL) $(DWS_FILE) $(DRVGEN_OUT_PATH) $(DRVGEN_OUT_PATH) gpio_dtsi
+
+$(DRVGEN_OUT)/inc/cust_pmic.dtsi: $(DRVGEN_TOOL) $(DWS_FILE)
+	@mkdir -p $(dir $@)
+	@$(DRVGEN_TOOL) $(DWS_FILE) $(DRVGEN_OUT_PATH) $(DRVGEN_OUT_PATH) pmic_dtsi
+
+$(DRVGEN_OUT)/inc/mt6735-pinfunc.h: $(DRVGEN_TOOL) $(DWS_FILE)
+	@mkdir -p $(dir $@)
+	@$(DRVGEN_TOOL) $(DWS_FILE) $(DRVGEN_OUT_PATH) $(DRVGEN_OUT_PATH) mt6735_pinfunc_h
+
+$(DRVGEN_OUT)/inc/pinctrl-mtk-mt6735.h: $(DRVGEN_TOOL) $(DWS_FILE)
+	@mkdir -p $(dir $@)
+	@$(DRVGEN_TOOL) $(DWS_FILE) $(DRVGEN_OUT_PATH) $(DRVGEN_OUT_PATH) pinctrl_mtk_mt6735_h
 
 else
 $(DRVGEN_FILE_LIST): $(DRVGEN_OUT)/% : $(DRVGEN_PREBUILT_PATH)/%
